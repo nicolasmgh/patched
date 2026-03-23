@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ───────────────────────────────────────────
+
+enum Role {
+  USER
+  COLLABORATOR
+  ADMIN
+}
+
+enum Category {
+  POTHOLE            // Bache
+  SIDEWALK           // Vereda rota
+  STREET_LIGHTING    // Luminaria / alumbrado
+  ROAD_DAMAGE        // Daño en calzada general
+  WASTE_MANAGEMENT   // Basura / microbasurales
+  STORM_DRAINAGE     // Desagüe / inundación
+  WATER_SANITATION   // Cloacas / agua corriente
+  POWER_GRID         // Corte de luz / tendido eléctrico
+  TRAFFIC            // Semáforos, señales, pasos a nivel
+  PUBLIC_SAFETY      // Seguridad urbana
+  URBAN_PLANNING     // Obras paralizadas, veredas sin terminar
+  GREEN_SPACES       // Plazas, árboles, espacios verdes abandonados
+  OTHER              // Otros
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  DUPLICATE
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+enum NotificationType {
+  REPORT_APPROVED
+  REPORT_REJECTED
+  REPORT_STATUS_CHANGED
+  COMMENT_ON_REPORT
+  CONFIRMATION_ON_REPORT
+  BADGE_EARNED
+  COLLABORATOR_GRANTED
+}
+
+enum ActionType {
+  APPROVE_REPORT
+  REJECT_REPORT
+  MODIFY_REPORT
+  CHANGE_STATUS
+  MARK_DUPLICATE
+  FLAG_CONTENT
+  GRANT_COLLABORATOR
+  REVOKE_COLLABORATOR
+}
+
+// ─── MODELOS ─────────────────────────────────────────
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String?
+  firstName       String
+  lastName        String
+  hideLastName    Boolean   @default(false)
+  avatarUrl       String?
+  role            Role      @default(USER)
+  reputation      Int       @default(0)
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reports         Report[]
+  categorySuggestions CategorySuggestion[]
+  confirmations   Confirmation[]
+  comments        Comment[]
+  follows         Follow[]
+  badges          UserBadge[]
+  notifications   Notification[]
+  actionLogs      ActionLog[]
+}
+
+model Report {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  category        Category
+  urgency         Urgency   @default(LOW)
+  status          Status    @default(PENDING)
+  latitude        Float
+  longitude       Float
+  address         String?
+  city            String?
+  province        String?
+  country         String    @default("AR")
+  resolvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id])
+  media           Media[]
+  confirmations   Confirmation[]
+  comments        Comment[]
+  follows         Follow[]
+  actionLogs      ActionLog[]
+}
+
+model CategorySuggestion {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  reviewed    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Media {
+  id          String      @id @default(uuid())
+  url         String
+  type        MediaType   @default(PHOTO)
+  isBefore    Boolean     @default(false)  // para el antes/despues
+  isAfter     Boolean     @default(false)
+  reportId    String?
+  report      Report?     @relation(fields: [reportId], references: [id])
+  commentId   String?
+  comment     Comment?    @relation(fields: [commentId], references: [id])
+  createdAt   DateTime    @default(now())
+}
+
+model Confirmation {
+  id          String    @id @default(uuid())
+  reportId    String
+  report      Report    @relation(fields: [reportId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@unique([reportId, userId])
+}
+
+model Comment {
+  id          String    @id @default(uuid())
+  content     String
+  flagged     Boolean   @default(false)
+  reportId    String
+  report      Report    @relation(fields: [reportId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  media       Media[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Follow {
+  id          String    @id @default(uuid())
+  reportId    String
+  report      Report    @relation(fields: [reportId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@unique([reportId, userId])
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String
+  iconUrl     String?
+  createdAt   DateTime    @default(now())
+
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  badgeId     String
+  badge       Badge     @relation(fields: [badgeId], references: [id])
+  earnedAt    DateTime  @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+model ActionLog {
+  id          String      @id @default(uuid())
+  action      ActionType
+  details     String?
+  reportId    String?
+  report      Report?     @relation(fields: [reportId], references: [id])
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  createdAt   DateTime    @default(now())
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  type        NotificationType
+  message     String
+  read        Boolean           @default(false)
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  createdAt   DateTime          @default(now())
+}

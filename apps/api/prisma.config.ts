@@ -1,0 +1,22 @@
+import path from 'path'
+import "dotenv/config";
+import { defineConfig, env } from 'prisma/config'
+
+export default defineConfig({
+  // @ts-ignore
+  earlyAccess: true,
+  schema: path.join('prisma', 'schema.prisma'),
+  // @ts-ignore
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+  migrate: {
+    async adapter() {
+      const { PrismaPg } = await import('@prisma/adapter-pg')
+      const { default: pg } = await import('pg')
+      const connectionString = process.env.DATABASE_URL!
+      const pool = new pg.Pool({ connectionString })
+      return new PrismaPg(pool as any)
+    }
+  }
+})
