@@ -22,6 +22,7 @@ app.use("/api/reports", require("./routes/reports"));
 app.use("/api/media", require("./routes/media"));
 app.use("/api/interactions", require("./routes/interactions"));
 app.use("/api/comments", require("./routes/comments"));
+app.use("/api/admin", require("./routes/admin"));
 // app.use("/api/users", require("./routes/users"));
 
 app.listen(PORT, () => {
