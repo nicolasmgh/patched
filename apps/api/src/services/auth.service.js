@@ -32,9 +32,24 @@ const register = async ({
 const login = async ({ email, password }) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error("Credenciales inválidas");
+
     if (!user.active) {
-        const error = new Error("Tu cuenta ha sido deshabilitada por faltas a nuestra política de convivencia.");
+        // Revisar si tiene una apelación para darle el estado correcto al frontend
+        const existingAppeal = await prisma.reportSuggestion.findFirst({
+            where: {
+                userId: user.id,
+                reason: "BAN_APPEAL",
+                status: {
+                    in: ["PENDING", "REVIEWED", "REJECTED"],
+                },
+            },
+        });
+
+        const error = new Error(
+            "Tu cuenta ha sido deshabilitada por faltas a nuestra política de convivencia.",
+        );
         error.statusCode = 403;
+        error.appealStatus = existingAppeal ? existingAppeal.status : null;
         throw error;
     }
 
@@ -56,4 +71,42 @@ const sanitize = (user) => {
     return rest;
 };
 
-module.exports = { register, login };
+const appeal = async ({ email, message }) => {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error("No encontramos un usuario con ese email");
+
+    if (user.active) throw new Error("Tu cuenta no está baneada");
+
+    // Revisar si tiene una apelación pendiente (PENDING) o rechazada (REJECTED) o leída y no aceptada (REVIEWED)
+    const existingAppeal = await prisma.reportSuggestion.findFirst({
+        where: {
+            userId: user.id,
+            reason: "BAN_APPEAL",
+            status: {
+                in: ["PENDING", "REVIEWED", "REJECTED"],
+            },
+        },
+    });
+
+    if (existingAppeal) {
+        if (existingAppeal.status === "PENDING") {
+            throw new Error("Ya tienes una apelación pendiente de revisión.");
+        } else {
+            throw new Error(
+                "Tu apelación anterior fue denegada o ya se encuentra bajo análisis. No podés enviar otra.",
+            );
+        }
+    }
+
+    await prisma.reportSuggestion.create({
+        data: {
+            userId: user.id,
+            reason: "BAN_APPEAL",
+            message: message,
+        },
+    });
+
+    return true;
+};
+
+module.exports = { register, login, appeal };

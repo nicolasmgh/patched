@@ -66,6 +66,22 @@ export default function Home() {
     const [selectedReport, setSelectedReport] = useState(null);
     const [mapBounds, setMapBounds] = useState(null);
     const [suggestPosition, setSuggestPosition] = useState(null);
+    const [lightboxMedia, setLightboxMedia] = useState(null);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const openLightbox = (mediaArray, startIndex) => {
+        setLightboxMedia(mediaArray);
+        setLightboxIndex(startIndex);
+    };
+    const nextMedia = () => {
+        if (lightboxMedia)
+            setLightboxIndex((i) => (i + 1) % lightboxMedia.length);
+    };
+    const prevMedia = () => {
+        if (lightboxMedia)
+            setLightboxIndex(
+                (i) => (i - 1 + lightboxMedia.length) % lightboxMedia.length,
+            );
+    };
     const sidebarWasOpen = useRef(false);
 
     useEffect(() => {
@@ -237,20 +253,60 @@ export default function Home() {
                                         </span>
                                     </div>
 
-                                    {selectedReport.media?.length > 0 && (
-                                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-                                            {selectedReport.media
-                                                .slice(0, 4)
-                                                .map((m) => (
-                                                    <img
-                                                        key={m.id}
-                                                        src={`http://localhost:3000${m.url}`}
-                                                        className="h-20 w-20 object-cover rounded-lg shrink-0"
-                                                        alt="foto"
-                                                    />
-                                                ))}
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        const filteredMedia =
+                                            selectedReport.media.filter(
+                                                (m) =>
+                                                    m.status === "APPROVED" ||
+                                                    (user?.role === "ADMIN" &&
+                                                        m.status !==
+                                                            "REJECTED"),
+                                            );
+                                        return (
+                                            filteredMedia.length > 0 && (
+                                                <div className="grid grid-cols-3 gap-2 mt-3">
+                                                    {filteredMedia
+                                                        .slice(0, 9)
+                                                        .map((m, idx) => (
+                                                            <button
+                                                                key={m.id}
+                                                                type="button"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    e.preventDefault();
+                                                                    openLightbox(
+                                                                        filteredMedia,
+                                                                        idx,
+                                                                    );
+                                                                }}
+                                                                className="w-full text-left relative aspect-square"
+                                                            >
+                                                                {m.type ===
+                                                                "VIDEO" ? (
+                                                                    <div className="w-full h-full bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
+                                                                        <video
+                                                                            src={`http://localhost:3000${m.url}`}
+                                                                            className="w-full h-full object-cover rounded-lg opacity-50"
+                                                                        />
+                                                                        <span className="absolute text-white text-2xl drop-shadow-md">
+                                                                            ▶
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <img
+                                                                        src={`http://localhost:3000${m.url}`}
+                                                                        className="w-full h-full aspect-square object-cover rounded-lg hover:opacity-90 transition"
+                                                                        alt="foto"
+                                                                    />
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                </div>
+                                            )
+                                        );
+                                    })()}
 
                                     <div className="flex gap-2 mt-4">
                                         <Link
@@ -475,6 +531,66 @@ export default function Home() {
                     </div>
                 )}
             </div>
+
+            {/* Lightbox Modal */}
+            {lightboxMedia && (
+                <div className="fixed inset-0 z-[10000] bg-black/95 flex items-center justify-center">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setLightboxMedia(null);
+                        }}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 w-10 h-10 flex items-center justify-center text-3xl font-light"
+                    >
+                        &times;
+                    </button>
+                    {lightboxMedia.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
+                            {lightboxIndex + 1} / {lightboxMedia.length}
+                        </div>
+                    )}
+                    {lightboxMedia.length > 1 && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                prevMedia();
+                            }}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-3xl pb-1"
+                        >
+                            &#8249;
+                        </button>
+                    )}
+
+                    <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+                        {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
+                            <video
+                                src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
+                                controls
+                                autoPlay
+                                className="max-w-full max-h-[90vh] rounded"
+                            />
+                        ) : (
+                            <img
+                                src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
+                                alt="Vista ampliada"
+                                className="max-w-full max-h-[90vh] object-contain rounded"
+                            />
+                        )}
+                    </div>
+
+                    {lightboxMedia.length > 1 && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                nextMedia();
+                            }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-3xl pb-1"
+                        >
+                            &#8250;
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

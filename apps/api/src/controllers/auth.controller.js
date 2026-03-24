@@ -14,8 +14,24 @@ const login = async (req, res) => {
         const data = await authService.login(req.body);
         res.status(200).json({ ok: true, ...data });
     } catch (err) {
-        res.status(err.statusCode || 401).json({ ok: false, message: err.message });
+        res.status(err.statusCode || 401).json({
+            ok: false,
+            message: err.message,
+            appealStatus: err.appealStatus || null,
+        });
     }
 };
 
-module.exports = { register, login };
+const appeal = async (req, res) => {
+    try {
+        await authService.appeal(req.body);
+        res.status(200).json({
+            ok: true,
+            message: "Apelación enviada correctamente.",
+        });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
+module.exports = { register, login, appeal };

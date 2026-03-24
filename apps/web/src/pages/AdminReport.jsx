@@ -33,7 +33,10 @@ export default function AdminReport() {
     const [uploadingAfter, setUploadingAfter] = useState(false);
 
     useEffect(() => {
-        if (!authLoading && (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))) {
+        if (
+            !authLoading &&
+            (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))
+        ) {
             navigate("/");
         } else if (!authLoading && user) {
             fetchReport();

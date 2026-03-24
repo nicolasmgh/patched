@@ -238,14 +238,19 @@ const toggleUserStatus = async (userId, active, adminId) => {
         data: { active },
     });
 
-    // Optionally you can create an actionLog here:
-    // await prisma.actionLog.create({
-    //     data: {
-    //         action: "CHANGE_STATUS",
-    //         details: `Usuario ${active ? "desbaneado" : "baneado"}`,
-    //         userId: adminId,
-    //     },
-    // });
+    if (active) {
+        // Al desbanear un usuario, se completan (o cancelan) sus apelaciones anteriores
+        // pasándolas a APPLIED para que pueda volver a apelar en el futuro si es baneado de nuevo.
+        await prisma.reportSuggestion.updateMany({
+            where: {
+                userId: userId,
+                reason: "BAN_APPEAL",
+            },
+            data: {
+                status: "APPLIED",
+            },
+        });
+    }
 
     return updated;
 };
@@ -278,10 +283,36 @@ const getSuggestions = async (status) => {
 };
 
 const updateSuggestionStatus = async (suggestionId, status) => {
-    return prisma.reportSuggestion.update({
+    const suggestion = await prisma.reportSuggestion.findUnique({
+        where: { id: suggestionId },
+    });
+
+    if (!suggestion) throw new Error("Sugerencia no encontrada");
+
+    const updated = await prisma.reportSuggestion.update({
         where: { id: suggestionId },
         data: { status },
     });
+
+    // Si es una apelación de baneo y se aprueba, desbaneamos al usuario automáticamente
+    if (suggestion.reason === "BAN_APPEAL" && status === "APPLIED") {
+        await prisma.user.update({
+            where: { id: suggestion.userId },
+            data: { active: true },
+        });
+
+        // Limpiamos otras posibles apelaciones pendientes marcándolas como aplicadas
+        await prisma.reportSuggestion.updateMany({
+            where: {
+                userId: suggestion.userId,
+                reason: "BAN_APPEAL",
+                status: "PENDING",
+            },
+            data: { status: "APPLIED" },
+        });
+    }
+
+    return updated;
 };
 
 const getPendingMedia = async () => {
@@ -293,7 +324,14 @@ const getPendingMedia = async () => {
                 select: {
                     id: true,
                     title: true,
-                    user: { select: { id: true, firstName: true, lastName: true, email: true } },
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            email: true,
+                        },
+                    },
                 },
             },
             comment: {
@@ -301,7 +339,14 @@ const getPendingMedia = async () => {
                     id: true,
                     content: true,
                     reportId: true,
-                    user: { select: { id: true, firstName: true, lastName: true, email: true } },
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            email: true,
+                        },
+                    },
                 },
             },
         },
@@ -311,7 +356,7 @@ const getPendingMedia = async () => {
 const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     const media = await prisma.media.findUnique({
         where: { id: mediaId },
-        include: { report: true, comment: true }
+        include: { report: true, comment: true },
     });
 
     if (!media) throw new Error("Media no encontrada");
@@ -322,16 +367,16 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     if (warnUser && userId) {
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { warnings: { increment: 1 } }
+            data: { warnings: { increment: 1 } },
         });
     }
 
     if (status === "REJECTED") {
         // Eliminar también el archivo físico del servidor
         try {
-            // media.url típicamente es algo como "/uploads/..." 
+            // media.url típicamente es algo como "/uploads/..."
             // Buscamos la ruta absoluta
-            const filePath = path.join(__dirname, "../../", media.url); 
+            const filePath = path.join(__dirname, "../../", media.url);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
@@ -341,7 +386,7 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
 
         // Eliminar de la base de datos para no listarlo más
         return prisma.media.delete({
-            where: { id: mediaId }
+            where: { id: mediaId },
         });
     }
 

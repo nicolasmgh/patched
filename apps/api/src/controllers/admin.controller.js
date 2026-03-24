@@ -73,7 +73,7 @@ const toggleUserStatus = async (req, res) => {
         const user = await adminService.toggleUserStatus(
             req.params.userId,
             req.body.active,
-            req.user.id
+            req.user.id,
         );
         res.status(200).json({ ok: true, user });
     } catch (err) {
@@ -116,7 +116,7 @@ const updateMediaStatus = async (req, res) => {
         const media = await adminService.updateMediaStatus(
             req.params.id,
             req.body.status,
-            req.body.warnUser
+            req.body.warnUser,
         );
         res.status(200).json({ ok: true, media });
     } catch (err) {

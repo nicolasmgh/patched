@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -54,9 +54,40 @@ export default function Admin() {
         category: "",
         city: "",
     });
+    const [userRoleFilter, setUserRoleFilter] = useState("");
+    const [userSort, setUserSort] = useState("recent");
+
+    const filteredAndSortedUsers = useMemo(() => {
+        let result = [...users];
+
+        if (userRoleFilter) {
+            result = result.filter((u) => u.role === userRoleFilter);
+        }
+
+        result.sort((a, b) => {
+            switch (userSort) {
+                case "name_asc":
+                    return a.firstName.localeCompare(b.firstName);
+                case "reputation_desc":
+                    return (b.reputation || 0) - (a.reputation || 0);
+                case "reports_desc":
+                    return (b._count?.reports || 0) - (a._count?.reports || 0);
+                case "warnings_desc":
+                    return (b.warnings || 0) - (a.warnings || 0);
+                case "recent":
+                default:
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+        });
+
+        return result;
+    }, [users, userRoleFilter, userSort]);
 
     useEffect(() => {
-        if (!authLoading && (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))) {
+        if (
+            !authLoading &&
+            (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))
+        ) {
             navigate("/");
         }
     }, [user, authLoading, navigate]);
@@ -116,8 +147,14 @@ export default function Admin() {
     const fetchSuggestions = async () => {
         setLoading(true);
         try {
-            const res = await api.get("/admin/suggestions?status=PENDING");
-            setSuggestions(res.data.suggestions);
+            const res = await api.get("/admin/suggestions");
+            // Ordenamos para que las pendientes salgan primero
+            const sorted = res.data.suggestions.sort((a, b) => {
+                if (a.status === "PENDING" && b.status !== "PENDING") return -1;
+                if (a.status !== "PENDING" && b.status === "PENDING") return 1;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+            setSuggestions(sorted);
         } catch (err) {
             console.error(err);
         } finally {
@@ -139,7 +176,10 @@ export default function Admin() {
 
     const handleMediaStatus = async (mediaId, status, warnUser = false) => {
         try {
-            await api.patch(`/admin/media/${mediaId}/status`, { status, warnUser });
+            await api.patch(`/admin/media/${mediaId}/status`, {
+                status,
+                warnUser,
+            });
             fetchPendingMedia();
         } catch (err) {
             alert("Error al actualizar la moderación");
@@ -175,6 +215,19 @@ export default function Admin() {
                 status: nextStatus,
             });
             fetchSuggestions();
+            fetchUsers(); // por las dudas
+        } catch (err) {
+            alert("Error al actualizar sugerencia");
+        }
+    };
+
+    const setSuggestionStatus = async (id, status) => {
+        try {
+            await api.patch(`/admin/suggestions/${id}/status`, {
+                status: status,
+            });
+            fetchSuggestions();
+            fetchUsers();
         } catch (err) {
             alert("Error al actualizar sugerencia");
         }
@@ -528,11 +581,13 @@ export default function Admin() {
                             suggestions.map((s) => (
                                 <div
                                     key={s.id}
-                                    className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center"
+                                    className={`bg-white rounded-2xl border ${s.status === "PENDING" ? "border-purple-200 shadow-sm" : "border-gray-200 opacity-60"} p-5 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center transition-all`}
                                 >
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-semibold uppercase">
+                                            <span
+                                                className={`text-xs px-2 py-0.5 rounded font-semibold uppercase ${s.status === "PENDING" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"}`}
+                                            >
                                                 {s.reason.replace("_", " ")}
                                             </span>
                                             <span className="text-sm text-gray-400">
@@ -543,21 +598,62 @@ export default function Admin() {
                                         <p className="text-gray-700 font-medium mb-1">
                                             {s.message}
                                         </p>
-                                        <Link
-                                            to={`/reports/${s.reportId}`}
-                                            className="text-xs text-emerald-600 hover:underline"
-                                        >
-                                            Ver Reporte: {s.report?.title}
-                                        </Link>
+                                        {s.reportId && (
+                                            <Link
+                                                to={`/reports/${s.reportId}`}
+                                                className="text-xs text-emerald-600 hover:underline"
+                                            >
+                                                Ver Reporte: {s.report?.title}
+                                            </Link>
+                                        )}
                                     </div>
-                                    <button
-                                        onClick={() =>
-                                            toggleSuggestion(s.id, s.status)
-                                        }
-                                        className="text-xs px-3 py-1.5 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-medium whitespace-nowrap"
-                                    >
-                                        ✔ Marcar como revisado
-                                    </button>
+                                    {s.reason === "BAN_APPEAL" ? (
+                                        <div className="flex gap-2">
+                                            {s.status === "PENDING" ? (
+                                                <>
+                                                    <button
+                                                        onClick={() =>
+                                                            setSuggestionStatus(
+                                                                s.id,
+                                                                "APPLIED",
+                                                            )
+                                                        }
+                                                        className="text-xs px-3 py-1.5 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-medium whitespace-nowrap"
+                                                    >
+                                                        ✔ Aprobar y Desbanear
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            setSuggestionStatus(
+                                                                s.id,
+                                                                "REJECTED",
+                                                            )
+                                                        }
+                                                        className="text-xs px-3 py-1.5 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition font-medium whitespace-nowrap"
+                                                    >
+                                                        ✖ Rechazar
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="text-xs px-3 py-1.5 font-medium text-gray-400">
+                                                    {s.status === "APPLIED"
+                                                        ? "Aprobada"
+                                                        : "Rechazada"}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() =>
+                                                toggleSuggestion(s.id, s.status)
+                                            }
+                                            className={`text-xs px-3 py-1.5 border rounded-lg transition font-medium whitespace-nowrap ${s.status === "PENDING" ? "border-emerald-500 text-emerald-600 hover:bg-emerald-50" : "border-gray-300 text-gray-500 hover:bg-gray-50"}`}
+                                        >
+                                            {s.status === "PENDING"
+                                                ? "✔ Marcar como leída"
+                                                : "Marcar como no leída"}
+                                        </button>
+                                    )}
                                 </div>
                             ))
                         )}
@@ -578,7 +674,8 @@ export default function Admin() {
                                     ¡Todo limpio!
                                 </h3>
                                 <p className="text-gray-400 text-sm mt-1">
-                                    No hay fotos ni videos pendientes de moderación.
+                                    No hay fotos ni videos pendientes de
+                                    moderación.
                                 </p>
                             </div>
                         ) : (
@@ -603,40 +700,77 @@ export default function Admin() {
                                                 />
                                             )}
                                             <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded backdrop-blur-md">
-                                                {m.isAfter ? "DESPUÉS" : "ANTES"}
+                                                {m.isAfter
+                                                    ? "DESPUÉS"
+                                                    : "ANTES"}
                                             </div>
                                         </div>
                                         <div className="p-4 flex flex-col flex-1">
                                             {m.reportId && (
                                                 <div className="mb-2">
-                                                    <p className="text-xs text-gray-500 uppercase font-semibold">Reporte</p>
-                                                    <Link to={`/reports/${m.reportId}`} className="text-sm font-medium text-emerald-600 hover:underline line-clamp-1">
+                                                    <p className="text-xs text-gray-500 uppercase font-semibold">
+                                                        Reporte
+                                                    </p>
+                                                    <Link
+                                                        to={`/reports/${m.reportId}`}
+                                                        className="text-sm font-medium text-emerald-600 hover:underline line-clamp-1"
+                                                    >
                                                         {m.report?.title}
                                                     </Link>
                                                     <p className="text-xs text-gray-400 mt-0.5">
-                                                        por {m.report?.user?.firstName} {m.report?.user?.lastName}
+                                                        por{" "}
+                                                        {
+                                                            m.report?.user
+                                                                ?.firstName
+                                                        }{" "}
+                                                        {
+                                                            m.report?.user
+                                                                ?.lastName
+                                                        }
                                                     </p>
                                                 </div>
                                             )}
                                             {m.comment && (
                                                 <div className="mb-2">
-                                                    <p className="text-xs text-gray-500 uppercase font-semibold">Comentario</p>
-                                                    <p className="text-sm text-gray-700 line-clamp-2">"{m.comment.content}"</p>
+                                                    <p className="text-xs text-gray-500 uppercase font-semibold">
+                                                        Comentario
+                                                    </p>
+                                                    <p className="text-sm text-gray-700 line-clamp-2">
+                                                        "{m.comment.content}"
+                                                    </p>
                                                     <p className="text-xs text-gray-400 mt-0.5">
-                                                        por {m.comment.user?.firstName} {m.comment.user?.lastName}
+                                                        por{" "}
+                                                        {
+                                                            m.comment.user
+                                                                ?.firstName
+                                                        }{" "}
+                                                        {
+                                                            m.comment.user
+                                                                ?.lastName
+                                                        }
                                                     </p>
                                                 </div>
                                             )}
                                             <div className="mt-auto pt-3 flex flex-col gap-2">
                                                 <div className="flex gap-2">
                                                     <button
-                                                        onClick={() => handleMediaStatus(m.id, "APPROVED")}
+                                                        onClick={() =>
+                                                            handleMediaStatus(
+                                                                m.id,
+                                                                "APPROVED",
+                                                            )
+                                                        }
                                                         className="flex-1 bg-emerald-100 text-emerald-700 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-200 transition"
                                                     >
                                                         Aprobar
                                                     </button>
                                                     <button
-                                                        onClick={() => handleMediaStatus(m.id, "REJECTED")}
+                                                        onClick={() =>
+                                                            handleMediaStatus(
+                                                                m.id,
+                                                                "REJECTED",
+                                                            )
+                                                        }
                                                         className="flex-1 bg-red-100 text-red-700 py-1.5 rounded-lg text-xs font-medium hover:bg-red-200 transition"
                                                     >
                                                         Rechazar
@@ -644,7 +778,13 @@ export default function Admin() {
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button
-                                                        onClick={() => handleMediaStatus(m.id, "REJECTED", true)}
+                                                        onClick={() =>
+                                                            handleMediaStatus(
+                                                                m.id,
+                                                                "REJECTED",
+                                                                true,
+                                                            )
+                                                        }
                                                         className="flex-1 bg-orange-100 text-orange-800 py-1.5 rounded-lg text-xs font-medium hover:bg-orange-200 transition"
                                                     >
                                                         Rechazar y Advertir
@@ -668,85 +808,135 @@ export default function Admin() {
 
                 {/* Usuarios — solo ADMIN */}
                 {tab === "users" && user?.role === "ADMIN" && (
-                    <div className="flex flex-col gap-3">
-                        {loading ? (
-                            <div className="text-center text-gray-400 py-8">
-                                Cargando...
-                            </div>
-                        ) : (
-                            users.map((u) => (
-                                <div
-                                    key={u.id}
-                                    className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-4"
-                                >
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-800">
-                                            {u.firstName} {u.lastName}
-                                        </p>
-                                        <p className="text-xs text-gray-400">
-                                            {u.email}
-                                        </p>
-                                        <div className="flex gap-2 mt-1">
-                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                                                {u.role}
-                                            </span>
-                                            {!u.active && (
-                                                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                                                    Baneado
-                                                </span>
-                                            )}
-                                            <span className="text-xs text-gray-400">
-                                                ⭐ {u.reputation} pts
-                                            </span>
-                                            <span className="text-xs text-gray-400">
-                                                📋 {u._count?.reports} reportes
-                                            </span>
-                                            {u.warnings > 0 && (
-                                                <span className="text-xs text-orange-600 font-medium">
-                                                    ⚠ {u.warnings} advertencias
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {u.id !== user.id && u.role !== "ADMIN" && (
-                                        <div className="flex gap-2 flex-col sm:flex-row">
-                                            <button
-                                                onClick={() =>
-                                                    handleToggleUserStatus(
-                                                        u.id,
-                                                        !u.active
-                                                    )
-                                                }
-                                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
-                                                    u.active
-                                                        ? "bg-orange-50 text-orange-700 hover:bg-orange-100"
-                                                        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                                }`}
-                                            >
-                                                {u.active ? "Banear" : "Desbanear"}
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleGrantCollaborator(
-                                                        u.id,
-                                                        u.role === "COLLABORATOR",
-                                                    )
-                                                }
-                                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
-                                                    u.role === "COLLABORATOR"
-                                                        ? "bg-red-50 text-red-600 hover:bg-red-100"
-                                                        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                                }`}
-                                            >
-                                                {u.role === "COLLABORATOR"
-                                                    ? "Quitar colaborador"
-                                                    : "Hacer colaborador"}
-                                            </button>
-                                        </div>
-                                    )}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex gap-2 flex-wrap bg-white rounded-xl border border-gray-200 p-3">
+                            <select
+                                value={userSort}
+                                onChange={(e) => setUserSort(e.target.value)}
+                                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            >
+                                <option value="recent">Más recientes</option>
+                                <option value="name_asc">
+                                    Alfabético (A-Z)
+                                </option>
+                                <option value="reputation_desc">
+                                    Mayor reputación
+                                </option>
+                                <option value="reports_desc">
+                                    Más reportes
+                                </option>
+                                <option value="warnings_desc">
+                                    Más advertencias
+                                </option>
+                            </select>
+
+                            <select
+                                value={userRoleFilter}
+                                onChange={(e) =>
+                                    setUserRoleFilter(e.target.value)
+                                }
+                                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            >
+                                <option value="">Todos los roles</option>
+                                <option value="USER">Usuarios</option>
+                                <option value="COLLABORATOR">
+                                    Colaboradores
+                                </option>
+                                <option value="ADMIN">Administradores</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            {loading ? (
+                                <div className="text-center text-gray-400 py-8">
+                                    Cargando...
                                 </div>
-                            ))
-                        )}
+                            ) : filteredAndSortedUsers.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-500 text-sm">
+                                    No se encontraron usuarios con esos filtros
+                                </div>
+                            ) : (
+                                filteredAndSortedUsers.map((u) => (
+                                    <div
+                                        key={u.id}
+                                        className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-4"
+                                    >
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {u.firstName} {u.lastName}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                {u.email}
+                                            </p>
+                                            <div className="flex gap-2 mt-1">
+                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                                    {u.role}
+                                                </span>
+                                                {!u.active && (
+                                                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                                        Baneado
+                                                    </span>
+                                                )}
+                                                <span className="text-xs text-gray-400">
+                                                    ⭐ {u.reputation} pts
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                    📋 {u._count?.reports}{" "}
+                                                    reportes
+                                                </span>
+                                                {u.warnings > 0 && (
+                                                    <span className="text-xs text-orange-600 font-medium">
+                                                        ⚠ {u.warnings}{" "}
+                                                        advertencias
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {u.id !== user.id &&
+                                            u.role !== "ADMIN" && (
+                                                <div className="flex gap-2 flex-col sm:flex-row">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleToggleUserStatus(
+                                                                u.id,
+                                                                !u.active,
+                                                            )
+                                                        }
+                                                        className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
+                                                            u.active
+                                                                ? "bg-orange-50 text-orange-700 hover:bg-orange-100"
+                                                                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                                        }`}
+                                                    >
+                                                        {u.active
+                                                            ? "Banear"
+                                                            : "Desbanear"}
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleGrantCollaborator(
+                                                                u.id,
+                                                                u.role ===
+                                                                    "COLLABORATOR",
+                                                            )
+                                                        }
+                                                        className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
+                                                            u.role ===
+                                                            "COLLABORATOR"
+                                                                ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                                                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                                        }`}
+                                                    >
+                                                        {u.role ===
+                                                        "COLLABORATOR"
+                                                            ? "Quitar colaborador"
+                                                            : "Hacer colaborador"}
+                                                    </button>
+                                                </div>
+                                            )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

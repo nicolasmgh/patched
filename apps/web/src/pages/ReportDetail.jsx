@@ -79,6 +79,7 @@ export default function ReportDetail() {
     // Lightbox modal para fotos y videos
     const [lightboxMedia, setLightboxMedia] = useState(null);
     const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const openLightbox = (mediaArray, startIndex) => {
         setLightboxMedia(mediaArray);
@@ -240,23 +241,20 @@ export default function ReportDetail() {
         (m) =>
             m.isBefore &&
             (m.status === "APPROVED" ||
-                user?.role === "ADMIN" ||
-                report.userId === user?.id),
+                (user?.role === "ADMIN" && m.status !== "REJECTED")),
     );
     const afterPhotos = report.media.filter(
         (m) =>
             m.isAfter &&
             (m.status === "APPROVED" ||
-                user?.role === "ADMIN" ||
-                report.userId === user?.id),
+                (user?.role === "ADMIN" && m.status !== "REJECTED")),
     );
     const generalPhotos = report.media.filter(
         (m) =>
             !m.isBefore &&
             !m.isAfter &&
             (m.status === "APPROVED" ||
-                user?.role === "ADMIN" ||
-                report.userId === user?.id),
+                (user?.role === "ADMIN" && m.status !== "REJECTED")),
     );
 
     return (
@@ -419,6 +417,7 @@ export default function ReportDetail() {
                                                     },
                                                 );
                                                 fetchReport();
+                                                setShowUploadModal(true);
                                             } catch (err) {
                                                 console.error(err);
                                                 alert(
@@ -643,41 +642,68 @@ export default function ReportDetail() {
                                                     </span>
                                                 )}
                                             </div>
-                                            {c.media && c.media.length > 0 && (
-                                                <div className="flex gap-2 mt-2">
-                                                    {c.media.map((m, idx) => (
-                                                        <button
-                                                            key={m.id}
-                                                            onClick={() =>
-                                                                openLightbox(
-                                                                    c.media,
+                                            {c.media &&
+                                                c.media.filter(
+                                                    (m) =>
+                                                        m.status ===
+                                                            "APPROVED" ||
+                                                        (user?.role ===
+                                                            "ADMIN" &&
+                                                            m.status !==
+                                                                "REJECTED"),
+                                                ).length > 0 && (
+                                                    <div className="flex gap-2 mt-2">
+                                                        {c.media
+                                                            .filter(
+                                                                (m) =>
+                                                                    m.status ===
+                                                                        "APPROVED" ||
+                                                                    (user?.role ===
+                                                                        "ADMIN" &&
+                                                                        m.status !==
+                                                                            "REJECTED"),
+                                                            )
+                                                            .map(
+                                                                (
+                                                                    m,
                                                                     idx,
-                                                                )
-                                                            }
-                                                            className="text-left relative"
-                                                        >
-                                                            {m.type ===
-                                                            "VIDEO" ? (
-                                                                <div className="h-16 w-16 bg-gray-900 rounded-md flex items-center justify-center relative hover:opacity-90 transition">
-                                                                    <video
-                                                                        src={`http://localhost:3000${m.url}`}
-                                                                        className="w-full h-full object-cover rounded-md opacity-50"
-                                                                    />
-                                                                    <span className="absolute text-white text-lg">
-                                                                        ▶
-                                                                    </span>
-                                                                </div>
-                                                            ) : (
-                                                                <img
-                                                                    src={`http://localhost:3000${m.url}`}
-                                                                    alt="comentario"
-                                                                    className="h-16 w-16 object-cover rounded-md hover:opacity-90 transition"
-                                                                />
+                                                                    arr,
+                                                                ) => (
+                                                                    <button
+                                                                        key={
+                                                                            m.id
+                                                                        }
+                                                                        onClick={() =>
+                                                                            openLightbox(
+                                                                                arr,
+                                                                                idx,
+                                                                            )
+                                                                        }
+                                                                        className="text-left relative"
+                                                                    >
+                                                                        {m.type ===
+                                                                        "VIDEO" ? (
+                                                                            <div className="h-16 w-16 bg-gray-900 rounded-md flex items-center justify-center relative hover:opacity-90 transition">
+                                                                                <video
+                                                                                    src={`http://localhost:3000${m.url}`}
+                                                                                    className="w-full h-full object-cover rounded-md opacity-50"
+                                                                                />
+                                                                                <span className="absolute text-white text-lg">
+                                                                                    ▶
+                                                                                </span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <img
+                                                                                src={`http://localhost:3000${m.url}`}
+                                                                                alt="comentario"
+                                                                                className="h-16 w-16 object-cover rounded-md hover:opacity-90 transition"
+                                                                            />
+                                                                        )}
+                                                                    </button>
+                                                                ),
                                                             )}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                    </div>
+                                                )}
                                         </div>
                                     </div>
                                 );
@@ -830,6 +856,30 @@ export default function ReportDetail() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de subida exitosa */}
+            {showUploadModal && (
+                <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl text-center">
+                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                            ✓
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">
+                            ¡Subida exitosa!
+                        </h2>
+                        <p className="text-gray-600 mb-4 inline-block mx-auto text-left">
+                            La imagen se subió correctamente y está pendiente de
+                            moderación.
+                        </p>
+                        <button
+                            onClick={() => setShowUploadModal(false)}
+                            className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition"
+                        >
+                            Aceptar
+                        </button>
                     </div>
                 </div>
             )}
