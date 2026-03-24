@@ -32,7 +32,11 @@ const register = async ({
 const login = async ({ email, password }) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error("Credenciales inválidas");
-    if (!user.active) throw new Error("Usuario desactivado");
+    if (!user.active) {
+        const error = new Error("Tu cuenta ha sido deshabilitada por faltas a nuestra política de convivencia.");
+        error.statusCode = 403;
+        throw error;
+    }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new Error("Credenciales inválidas");

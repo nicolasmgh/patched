@@ -232,6 +232,24 @@ const updateUserRole = async (userId, role, adminId) => {
     return updated;
 };
 
+const toggleUserStatus = async (userId, active, adminId) => {
+    const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { active },
+    });
+
+    // Optionally you can create an actionLog here:
+    // await prisma.actionLog.create({
+    //     data: {
+    //         action: "CHANGE_STATUS",
+    //         details: `Usuario ${active ? "desbaneado" : "baneado"}`,
+    //         userId: adminId,
+    //     },
+    // });
+
+    return updated;
+};
+
 const getSuggestions = async (status) => {
     const where = {};
     if (status) {
@@ -306,15 +324,6 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
             where: { id: userId },
             data: { warnings: { increment: 1 } }
         });
-
-        // Si llega a 3 advertencias, banear
-        if (user.warnings >= 3) {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { active: false }
-            });
-            // Opcional: Crear un actionLog de ban automático
-        }
     }
 
     if (status === "REJECTED") {
@@ -349,6 +358,7 @@ module.exports = {
     getDashboard,
     getUsers,
     updateUserRole,
+    toggleUserStatus,
     getSuggestions,
     updateSuggestionStatus,
     getPendingMedia,

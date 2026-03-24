@@ -48,7 +48,7 @@ function MapClickHandler({ onMapClick }) {
 }
 
 export default function NewReport() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({
         title: "",
@@ -65,6 +65,10 @@ export default function NewReport() {
     const [loading, setLoading] = useState(false);
 
     const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        if (!authLoading && !user) navigate("/login");
+    }, [user, authLoading, navigate]);
 
     useEffect(() => {
         const lat = searchParams.get("lat");

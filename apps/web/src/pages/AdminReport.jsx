@@ -24,7 +24,7 @@ const VALID_TRANSITIONS = {
 
 export default function AdminReport() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -33,10 +33,12 @@ export default function AdminReport() {
     const [uploadingAfter, setUploadingAfter] = useState(false);
 
     useEffect(() => {
-        if (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))
+        if (!authLoading && (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))) {
             navigate("/");
-        fetchReport();
-    }, [id]);
+        } else if (!authLoading && user) {
+            fetchReport();
+        }
+    }, [id, user, authLoading, navigate]);
 
     const fetchReport = async () => {
         try {

@@ -68,6 +68,19 @@ const updateUserRole = async (req, res) => {
     }
 };
 
+const toggleUserStatus = async (req, res) => {
+    try {
+        const user = await adminService.toggleUserStatus(
+            req.params.userId,
+            req.body.active,
+            req.user.id
+        );
+        res.status(200).json({ ok: true, user });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
 const getSuggestions = async (req, res) => {
     try {
         const suggestions = await adminService.getSuggestions(req.query.status);
@@ -118,6 +131,7 @@ module.exports = {
     getDashboard,
     getUsers,
     updateUserRole,
+    toggleUserStatus,
     getSuggestions,
     updateSuggestionStatus,
     getPendingMedia,

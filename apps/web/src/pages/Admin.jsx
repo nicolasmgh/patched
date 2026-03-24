@@ -39,7 +39,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function Admin() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [tab, setTab] = useState("dashboard");
     const [dashboard, setDashboard] = useState(null);
@@ -56,10 +56,10 @@ export default function Admin() {
     });
 
     useEffect(() => {
-        if (!user || !["ADMIN", "COLLABORATOR"].includes(user.role)) {
+        if (!authLoading && (!user || !["ADMIN", "COLLABORATOR"].includes(user.role))) {
             navigate("/");
         }
-    }, [user]);
+    }, [user, authLoading, navigate]);
 
     useEffect(() => {
         if (tab === "dashboard") fetchDashboard();
@@ -150,6 +150,17 @@ export default function Admin() {
         try {
             await api.patch(`/admin/users/${userId}/role`, {
                 role: revoke ? "USER" : "COLLABORATOR",
+            });
+            fetchUsers();
+        } catch (err) {
+            alert(err.response?.data?.message || "Error");
+        }
+    };
+
+    const handleToggleUserStatus = async (userId, newStatus) => {
+        try {
+            await api.patch(`/admin/users/${userId}/status`, {
+                active: newStatus,
             });
             fetchUsers();
         } catch (err) {
@@ -698,23 +709,40 @@ export default function Admin() {
                                         </div>
                                     </div>
                                     {u.id !== user.id && u.role !== "ADMIN" && (
-                                        <button
-                                            onClick={() =>
-                                                handleGrantCollaborator(
-                                                    u.id,
-                                                    u.role === "COLLABORATOR",
-                                                )
-                                            }
-                                            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
-                                                u.role === "COLLABORATOR"
-                                                    ? "bg-red-50 text-red-600 hover:bg-red-100"
-                                                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                            }`}
-                                        >
-                                            {u.role === "COLLABORATOR"
-                                                ? "Quitar colaborador"
-                                                : "Hacer colaborador"}
-                                        </button>
+                                        <div className="flex gap-2 flex-col sm:flex-row">
+                                            <button
+                                                onClick={() =>
+                                                    handleToggleUserStatus(
+                                                        u.id,
+                                                        !u.active
+                                                    )
+                                                }
+                                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
+                                                    u.active
+                                                        ? "bg-orange-50 text-orange-700 hover:bg-orange-100"
+                                                        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                                }`}
+                                            >
+                                                {u.active ? "Banear" : "Desbanear"}
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleGrantCollaborator(
+                                                        u.id,
+                                                        u.role === "COLLABORATOR",
+                                                    )
+                                                }
+                                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition shrink-0 ${
+                                                    u.role === "COLLABORATOR"
+                                                        ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                                        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                                }`}
+                                            >
+                                                {u.role === "COLLABORATOR"
+                                                    ? "Quitar colaborador"
+                                                    : "Hacer colaborador"}
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ))

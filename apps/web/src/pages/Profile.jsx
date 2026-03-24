@@ -39,7 +39,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function Profile() {
-    const { user, login, logout } = useAuth();
+    const { user, login, logout, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [notifications, setNotifications] = useState([]);
@@ -50,10 +50,13 @@ export default function Profile() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        if (!user) return navigate("/login");
-        fetchProfile();
-        fetchNotifications();
-    }, []);
+        if (!authLoading && !user) {
+            navigate("/login");
+        } else if (!authLoading && user) {
+            fetchProfile();
+            fetchNotifications();
+        }
+    }, [authLoading, user, navigate]);
 
     const fetchProfile = async () => {
         try {

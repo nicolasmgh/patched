@@ -6,6 +6,7 @@ const {
     getDashboard,
     getUsers,
     updateUserRole,
+    toggleUserStatus,
     getSuggestions,
     updateSuggestionStatus,
     getPendingMedia,
@@ -22,6 +23,7 @@ router.get("/logs", ...isAdmin, getActionLogs);
 router.get("/dashboard", ...isPrivileged, getDashboard);
 router.get("/users", ...isAdmin, getUsers);
 router.patch("/users/:userId/role", ...isAdmin, updateUserRole);
+router.patch("/users/:userId/status", ...isAdmin, toggleUserStatus);
 router.get("/suggestions", ...isPrivileged, getSuggestions);
 router.patch(
     "/suggestions/:id/status",
