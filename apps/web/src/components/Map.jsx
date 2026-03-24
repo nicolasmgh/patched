@@ -56,9 +56,8 @@ export default function Map({
     onMapClick = null,
     selectedPosition = null,
     height = "100%",
+    center = [-34.4198, -58.7293],
 }) {
-    const center = [-34.4198, -58.7293]; // Escobar por defecto
-
     return (
         <MapContainer
             center={center}

@@ -12,6 +12,8 @@ export default function Register() {
         email: "",
         password: "",
         hideLastName: false,
+        city: "",
+        province: "",
     });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -126,6 +128,35 @@ export default function Register() {
                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             placeholder="••••••••"
                         />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="flex-1">
+                            <label className="text-sm font-medium text-gray-700 block mb-1">
+                                Ciudad
+                            </label>
+                            <input
+                                type="text"
+                                name="city"
+                                value={form.city}
+                                onChange={handleChange}
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                placeholder="Escobar"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-sm font-medium text-gray-700 block mb-1">
+                                Provincia
+                            </label>
+                            <input
+                                type="text"
+                                name="province"
+                                value={form.province}
+                                onChange={handleChange}
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                placeholder="Buenos Aires"
+                            />
+                        </div>
                     </div>
 
                     <label className="flex items-center gap-2 cursor-pointer">

@@ -15,6 +15,16 @@ const getProfile = async (userId) => {
             badges: {
                 include: { badge: true },
             },
+            comments: {
+                orderBy: { createdAt: "desc" },
+                take: 20,
+                include: {
+                    report: {
+                        select: { id: true, title: true },
+                    },
+                    _count: { select: { likes: true } },
+                },
+            },
             _count: {
                 select: { reports: true, confirmations: true, comments: true },
             },
@@ -72,6 +82,21 @@ const getPublicProfile = async (userId) => {
             reputation: true,
             createdAt: true,
             badges: { include: { badge: true } },
+            reports: {
+                where: { status: { not: "REJECTED" } },
+                orderBy: { createdAt: "desc" },
+                take: 10,
+                select: {
+                    id: true,
+                    title: true,
+                    category: true,
+                    status: true,
+                    createdAt: true,
+                    address: true,
+                    city: true,
+                    _count: { select: { confirmations: true, comments: true } },
+                },
+            },
             _count: { select: { reports: true, confirmations: true } },
         },
     });

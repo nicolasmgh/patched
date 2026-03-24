@@ -178,9 +178,7 @@ export default function Profile() {
                                     <>
                                         <h1 className="text-xl font-bold text-gray-900">
                                             {profile?.firstName}{" "}
-                                            {profile?.hideLastName
-                                                ? ""
-                                                : profile?.lastName}
+                                            {profile?.lastName}
                                         </h1>
                                         <p className="text-sm text-gray-500">
                                             {profile?.email}
@@ -263,6 +261,7 @@ export default function Profile() {
                             key: "notifications",
                             label: `Notificaciones${unread > 0 ? ` (${unread})` : ""}`,
                         },
+                        { key: "comments", label: "Comentarios" },
                         { key: "badges", label: "Badges" },
                     ].map((t) => (
                         <button
@@ -327,6 +326,41 @@ export default function Profile() {
                                     >
                                         {STATUS_LABELS[r.status]}
                                     </span>
+                                </Link>
+                            ))
+                        )}
+                    </div>
+                )}
+
+                {tab === "comments" && (
+                    <div className="flex flex-col gap-3">
+                        {profile?.comments?.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+                                <p className="text-gray-400 text-sm">
+                                    Todavía no comentaste nada
+                                </p>
+                            </div>
+                        ) : (
+                            profile?.comments?.map((c) => (
+                                <Link
+                                    key={c.id}
+                                    to={`/reports/${c.report.id}`}
+                                    className="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 transition"
+                                >
+                                    <p className="text-xs text-gray-400 mb-1">
+                                        En: {c.report.title}
+                                    </p>
+                                    <p className="text-sm text-gray-700">
+                                        {c.content}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                        <span>❤️ {c._count.likes} likes</span>
+                                        <span>
+                                            {new Date(
+                                                c.createdAt,
+                                            ).toLocaleDateString("es-AR")}
+                                        </span>
+                                    </div>
                                 </Link>
                             ))
                         )}

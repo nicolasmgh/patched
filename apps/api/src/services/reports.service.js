@@ -101,11 +101,18 @@ const getById = async (id) => {
                         },
                     },
                     media: true,
+                    likes: {
+                        select: { userId: true },
+                    },
+                    _count: { select: { likes: true } },
                 },
                 orderBy: { createdAt: "asc" },
             },
             confirmations: {
                 select: { userId: true, createdAt: true },
+            },
+            follows: {
+                select: { userId: true },
             },
             _count: {
                 select: {

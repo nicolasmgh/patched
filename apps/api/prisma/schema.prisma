@@ -84,6 +84,8 @@ model User {
   role            Role      @default(USER)
   reputation      Int       @default(0)
   active          Boolean   @default(true)
+  city        String?
+  province    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -91,6 +93,7 @@ model User {
   categorySuggestions CategorySuggestion[]
   confirmations   Confirmation[]
   comments        Comment[]
+  commentLikes CommentLike[]
   follows         Follow[]
   badges          UserBadge[]
   notifications   Notification[]
@@ -168,6 +171,8 @@ model Comment {
   media       Media[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
+  likes     CommentLike[]
 }
 
 model Follow {
@@ -221,4 +226,15 @@ model Notification {
   userId      String
   user        User              @relation(fields: [userId], references: [id])
   createdAt   DateTime          @default(now())
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
 }

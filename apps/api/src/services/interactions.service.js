@@ -81,4 +81,46 @@ const unfollow = async (reportId, userId) => {
     return { unfollowed: true };
 };
 
-module.exports = { confirm, unconfirm, follow, unfollow };
+// ─── LIKES DE COMENTARIOS ────────────────────────────
+
+const likeComment = async (commentId, userId) => {
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+    });
+    if (!comment) throw new Error("Comentario no encontrado");
+    if (comment.userId === userId)
+        throw new Error("No podés likear tu propio comentario");
+
+    const existing = await prisma.commentLike.findUnique({
+        where: { commentId_userId: { commentId, userId } },
+    });
+    if (existing) throw new Error("Ya likeaste este comentario");
+
+    const like = await prisma.commentLike.create({
+        data: { commentId, userId },
+    });
+
+    return like;
+};
+
+const unlikeComment = async (commentId, userId) => {
+    const existing = await prisma.commentLike.findUnique({
+        where: { commentId_userId: { commentId, userId } },
+    });
+    if (!existing) throw new Error("No habías likeado este comentario");
+
+    await prisma.commentLike.delete({
+        where: { commentId_userId: { commentId, userId } },
+    });
+
+    return { unliked: true };
+};
+
+module.exports = {
+    confirm,
+    unconfirm,
+    follow,
+    unfollow,
+    likeComment,
+    unlikeComment,
+};

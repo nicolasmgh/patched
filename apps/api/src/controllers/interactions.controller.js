@@ -48,4 +48,35 @@ const unfollow = async (req, res) => {
     }
 };
 
-module.exports = { confirm, unconfirm, follow, unfollow };
+const likeComment = async (req, res) => {
+    try {
+        const result = await interactionsService.likeComment(
+            req.params.commentId,
+            req.user.id,
+        );
+        res.status(201).json({ ok: true, like: result });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
+const unlikeComment = async (req, res) => {
+    try {
+        const result = await interactionsService.unlikeComment(
+            req.params.commentId,
+            req.user.id,
+        );
+        res.status(200).json({ ok: true, ...result });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
+module.exports = {
+    confirm,
+    unconfirm,
+    follow,
+    unfollow,
+    likeComment,
+    unlikeComment,
+};

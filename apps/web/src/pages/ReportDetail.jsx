@@ -212,14 +212,17 @@ export default function ReportDetail() {
                     )}
 
                     {/* Reportado por */}
-                    {report.user && (
-                        <p className="text-xs text-gray-400">
-                            Reportado por {report.user.firstName}{" "}
-                            {report.user.hideLastName
-                                ? ""
-                                : report.user.lastName}
-                        </p>
-                    )}
+                    <Link
+                        to={
+                            user?.id === report.user?.id
+                                ? "/profile"
+                                : `/users/${report.user?.id}`
+                        }
+                        className="text-xs text-emerald-600 hover:underline"
+                    >
+                        Reportado por {report.user?.firstName}{" "}
+                        {report.user?.hideLastName ? "" : report.user?.lastName}
+                    </Link>
 
                     {/* Acciones */}
                     <div className="flex gap-3 mt-4">
@@ -371,29 +374,87 @@ export default function ReportDetail() {
                                 Todavía no hay comentarios
                             </p>
                         ) : (
-                            report.comments.map((c) => (
-                                <div key={c.id} className="flex gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-medium text-emerald-700 shrink-0">
-                                        {c.user.firstName[0]}
+                            report.comments.map((c) => {
+                                const liked =
+                                    user &&
+                                    c.likes?.some((l) => l.userId === user.id);
+                                return (
+                                    <div key={c.id} className="flex gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-medium text-emerald-700 shrink-0">
+                                            {c.user.firstName[0]}
+                                        </div>
+                                        <div className="flex-1">
+                                            <Link
+                                                to={
+                                                    user?.id === c.userId
+                                                        ? "/profile"
+                                                        : `/users/${c.user.id}`
+                                                }
+                                                className="text-sm font-medium text-gray-800 hover:text-emerald-600 transition"
+                                            >
+                                                {c.user.firstName}{" "}
+                                                {c.user.hideLastName
+                                                    ? ""
+                                                    : c.user.lastName}
+                                            </Link>
+                                            <p className="text-sm text-gray-600">
+                                                {c.content}
+                                            </p>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(
+                                                        c.createdAt,
+                                                    ).toLocaleDateString(
+                                                        "es-AR",
+                                                    )}
+                                                </p>
+                                                {user &&
+                                                    user.id !== c.userId && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    if (liked) {
+                                                                        await api.delete(
+                                                                            `/interactions/like/${c.id}`,
+                                                                        );
+                                                                    } else {
+                                                                        await api.post(
+                                                                            `/interactions/like/${c.id}`,
+                                                                        );
+                                                                    }
+                                                                    fetchReport();
+                                                                } catch (err) {
+                                                                    alert(
+                                                                        err
+                                                                            .response
+                                                                            ?.data
+                                                                            ?.message ||
+                                                                            "Error",
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className={`text-xs flex items-center gap-1 transition ${
+                                                                liked
+                                                                    ? "text-red-500"
+                                                                    : "text-gray-400 hover:text-red-400"
+                                                            }`}
+                                                        >
+                                                            ❤️{" "}
+                                                            {c._count?.likes ||
+                                                                0}
+                                                        </button>
+                                                    )}
+                                                {!user && (
+                                                    <span className="text-xs text-gray-300">
+                                                        ❤️{" "}
+                                                        {c._count?.likes || 0}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-800">
-                                            {c.user.firstName}{" "}
-                                            {c.user.hideLastName
-                                                ? ""
-                                                : c.user.lastName}
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            {c.content}
-                                        </p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {new Date(
-                                                c.createdAt,
-                                            ).toLocaleDateString("es-AR")}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
 

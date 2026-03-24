@@ -2,7 +2,14 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const prisma = require("../utils/prisma");
 
-const register = async ({ email, password, firstName, lastName }) => {
+const register = async ({
+    email,
+    password,
+    firstName,
+    lastName,
+    city,
+    province,
+}) => {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) throw new Error("El email ya está registrado");
 
@@ -14,6 +21,8 @@ const register = async ({ email, password, firstName, lastName }) => {
             password: hashed,
             firstName,
             lastName,
+            city: city || null,
+            province: province || null,
         },
     });
 

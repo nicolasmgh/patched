@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import Map from "../components/Map";
 import api from "../services/api";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const CATEGORY_LABELS = {
     POTHOLE: "Bache",
@@ -39,6 +40,7 @@ const STATUS_COLORS = {
 };
 
 export default function Home() {
+    const { user } = useAuth();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
@@ -46,6 +48,11 @@ export default function Home() {
         status: "",
         city: "",
     });
+
+    const getUserCenter = () => {
+        // Coordenadas aproximadas por ciudad — se puede mejorar con geocoding
+        return [-34.4198, -58.7293]; // Por ahora Escobar default, luego geocoding
+    };
 
     useEffect(() => {
         fetchReports();

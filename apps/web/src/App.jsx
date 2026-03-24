@@ -6,6 +6,7 @@ import ReportDetail from "./pages/ReportDetail";
 import Profile from "./pages/Profile";
 import NewReport from "./pages/NewReport";
 import NotFound from "./pages/NotFound";
+import PublicProfile from "./pages/PublicProfile";
 
 function App() {
     return (
@@ -17,6 +18,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/new-report" element={<NewReport />} />
             <Route path="*" element={<NotFound />} />
+            <Route path="/users/:userId" element={<PublicProfile />} />
         </Routes>
     );
 }
