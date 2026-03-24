@@ -8,6 +8,8 @@ const {
     updateUserRole,
     getSuggestions,
     updateSuggestionStatus,
+    getPendingMedia,
+    updateMediaStatus,
 } = require("../controllers/admin.controller");
 const { authenticate, authorize } = require("../middlewares/auth.middleware");
 
@@ -26,5 +28,7 @@ router.patch(
     ...isPrivileged,
     updateSuggestionStatus,
 );
+router.get("/media/pending", ...isPrivileged, getPendingMedia);
+router.patch("/media/:id/status", ...isPrivileged, updateMediaStatus);
 
 module.exports = router;

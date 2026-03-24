@@ -46,6 +46,8 @@ export default function Admin() {
     const [reports, setReports] = useState([]);
     const [logs, setLogs] = useState([]);
     const [users, setUsers] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
+    const [pendingMedia, setPendingMedia] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         status: "PENDING",
@@ -63,6 +65,8 @@ export default function Admin() {
         if (tab === "dashboard") fetchDashboard();
         if (tab === "reports") fetchReports();
         if (tab === "logs") fetchLogs();
+        if (tab === "suggestions") fetchSuggestions();
+        if (tab === "moderation") fetchPendingMedia();
         if (tab === "users" && user?.role === "ADMIN") fetchUsers();
     }, [tab, filters]);
 
@@ -109,6 +113,39 @@ export default function Admin() {
         }
     };
 
+    const fetchSuggestions = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/admin/suggestions?status=PENDING");
+            setSuggestions(res.data.suggestions);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchPendingMedia = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/admin/media/pending");
+            setPendingMedia(res.data.media);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMediaStatus = async (mediaId, status) => {
+        try {
+            await api.patch(`/admin/media/${mediaId}/status`, { status });
+            fetchPendingMedia();
+        } catch (err) {
+            alert("Error al actualizar la moderación");
+        }
+    };
+
     const handleGrantCollaborator = async (userId, revoke = false) => {
         try {
             await api.patch(`/admin/users/${userId}/role`, {
@@ -120,9 +157,23 @@ export default function Admin() {
         }
     };
 
+    const toggleSuggestion = async (id, currentStatus) => {
+        const nextStatus = currentStatus === "PENDING" ? "REVIEWED" : "PENDING";
+        try {
+            await api.patch(`/admin/suggestions/${id}/status`, {
+                status: nextStatus,
+            });
+            fetchSuggestions();
+        } catch (err) {
+            alert("Error al actualizar sugerencia");
+        }
+    };
+
     const tabs = [
         { key: "dashboard", label: "📊 Dashboard" },
         { key: "reports", label: "📋 Reportes" },
+        { key: "suggestions", label: "💡 Sugerencias" },
+        { key: "moderation", label: "📸 Moderación" },
         { key: "logs", label: "📝 Logs" },
         ...(user?.role === "ADMIN"
             ? [{ key: "users", label: "👥 Usuarios" }]
@@ -441,6 +492,148 @@ export default function Admin() {
                                     )}
                                 </div>
                             ))
+                        )}
+                    </div>
+                )}
+
+                {tab === "suggestions" && (
+                    <div className="flex flex-col gap-4">
+                        {loading ? (
+                            <div className="text-center text-gray-400 py-8">
+                                Cargando...
+                            </div>
+                        ) : suggestions.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center">
+                                <span className="text-4xl mb-3">🎉</span>
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                    ¡Al día!
+                                </h3>
+                                <p className="text-gray-400 text-sm mt-1">
+                                    No hay sugerencias nuevas pendientes de
+                                    revisión.
+                                </p>
+                            </div>
+                        ) : (
+                            suggestions.map((s) => (
+                                <div
+                                    key={s.id}
+                                    className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center"
+                                >
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-semibold uppercase">
+                                                {s.reason.replace("_", " ")}
+                                            </span>
+                                            <span className="text-sm text-gray-400">
+                                                por {s.user?.firstName}{" "}
+                                                {s.user?.lastName}
+                                            </span>
+                                        </div>
+                                        <p className="text-gray-700 font-medium mb-1">
+                                            {s.message}
+                                        </p>
+                                        <Link
+                                            to={`/reports/${s.reportId}`}
+                                            className="text-xs text-emerald-600 hover:underline"
+                                        >
+                                            Ver Reporte: {s.report?.title}
+                                        </Link>
+                                    </div>
+                                    <button
+                                        onClick={() =>
+                                            toggleSuggestion(s.id, s.status)
+                                        }
+                                        className="text-xs px-3 py-1.5 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-medium whitespace-nowrap"
+                                    >
+                                        ✔ Marcar como revisado
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+
+                {/* Moderación de Medios */}
+                {tab === "moderation" && (
+                    <div className="flex flex-col gap-4">
+                        {loading ? (
+                            <div className="text-center text-gray-400 py-8">
+                                Cargando...
+                            </div>
+                        ) : pendingMedia.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center">
+                                <span className="text-4xl mb-3">✨</span>
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                    ¡Todo limpio!
+                                </h3>
+                                <p className="text-gray-400 text-sm mt-1">
+                                    No hay fotos ni videos pendientes de moderación.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {pendingMedia.map((m) => (
+                                    <div
+                                        key={m.id}
+                                        className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col"
+                                    >
+                                        <div className="h-48 bg-gray-100 relative">
+                                            {m.type === "PHOTO" ? (
+                                                <img
+                                                    src={`http://localhost:3000${m.url}`}
+                                                    alt="Media pendiente"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <video
+                                                    src={`http://localhost:3000${m.url}`}
+                                                    className="w-full h-full object-cover bg-black"
+                                                    controls
+                                                />
+                                            )}
+                                            <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded backdrop-blur-md">
+                                                {m.isAfter ? "DESPUÉS" : "ANTES"}
+                                            </div>
+                                        </div>
+                                        <div className="p-4 flex flex-col flex-1">
+                                            {m.reportId && (
+                                                <div className="mb-2">
+                                                    <p className="text-xs text-gray-500 uppercase font-semibold">Reporte</p>
+                                                    <Link to={`/reports/${m.reportId}`} className="text-sm font-medium text-emerald-600 hover:underline line-clamp-1">
+                                                        {m.report?.title}
+                                                    </Link>
+                                                    <p className="text-xs text-gray-400 mt-0.5">
+                                                        por {m.report?.user?.firstName} {m.report?.user?.lastName}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {m.comment && (
+                                                <div className="mb-2">
+                                                    <p className="text-xs text-gray-500 uppercase font-semibold">Comentario</p>
+                                                    <p className="text-sm text-gray-700 line-clamp-2">"{m.comment.content}"</p>
+                                                    <p className="text-xs text-gray-400 mt-0.5">
+                                                        por {m.comment.user?.firstName} {m.comment.user?.lastName}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <div className="mt-auto pt-3 flex gap-2">
+                                                <button
+                                                    onClick={() => handleMediaStatus(m.id, "APPROVED")}
+                                                    className="flex-1 bg-emerald-100 text-emerald-700 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-200 transition"
+                                                >
+                                                    Aprobar
+                                                </button>
+                                                <button
+                                                    onClick={() => handleMediaStatus(m.id, "REJECTED")}
+                                                    className="flex-1 bg-red-100 text-red-700 py-1.5 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                                                >
+                                                    Rechazar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 )}

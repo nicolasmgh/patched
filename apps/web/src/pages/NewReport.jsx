@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +6,7 @@ import api from "../services/api";
 import Navbar from "../components/Navbar";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useSearchParams } from "react-router-dom";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -62,6 +63,16 @@ export default function NewReport() {
     const [files, setFiles] = useState([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const lat = searchParams.get("lat");
+        const lng = searchParams.get("lng");
+        if (lat && lng) {
+            setPosition({ lat: parseFloat(lat), lng: parseFloat(lng) });
+        }
+    }, []);
 
     if (!user) {
         return (

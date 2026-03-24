@@ -89,6 +89,27 @@ const updateSuggestionStatus = async (req, res) => {
     }
 };
 
+const getPendingMedia = async (req, res) => {
+    try {
+        const media = await adminService.getPendingMedia();
+        res.status(200).json({ ok: true, media });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+};
+
+const updateMediaStatus = async (req, res) => {
+    try {
+        const media = await adminService.updateMediaStatus(
+            req.params.id,
+            req.body.status
+        );
+        res.status(200).json({ ok: true, media });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
 module.exports = {
     changeStatus,
     modifyReport,
@@ -98,4 +119,6 @@ module.exports = {
     updateUserRole,
     getSuggestions,
     updateSuggestionStatus,
+    getPendingMedia,
+    updateMediaStatus,
 };

@@ -263,6 +263,37 @@ const updateSuggestionStatus = async (suggestionId, status) => {
     });
 };
 
+const getPendingMedia = async () => {
+    return prisma.media.findMany({
+        where: { status: "PENDING" },
+        orderBy: { createdAt: "desc" },
+        include: {
+            report: {
+                select: {
+                    id: true,
+                    title: true,
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                },
+            },
+            comment: {
+                select: {
+                    id: true,
+                    content: true,
+                    reportId: true,
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                },
+            },
+        },
+    });
+};
+
+const updateMediaStatus = async (mediaId, status) => {
+    return prisma.media.update({
+        where: { id: mediaId },
+        data: { status },
+    });
+};
+
 module.exports = {
     changeStatus,
     modifyReport,
@@ -272,4 +303,6 @@ module.exports = {
     updateUserRole,
     getSuggestions,
     updateSuggestionStatus,
+    getPendingMedia,
+    updateMediaStatus,
 };
