@@ -137,9 +137,9 @@ export default function Admin() {
         }
     };
 
-    const handleMediaStatus = async (mediaId, status) => {
+    const handleMediaStatus = async (mediaId, status, warnUser = false) => {
         try {
-            await api.patch(`/admin/media/${mediaId}/status`, { status });
+            await api.patch(`/admin/media/${mediaId}/status`, { status, warnUser });
             fetchPendingMedia();
         } catch (err) {
             alert("Error al actualizar la moderación");
@@ -616,19 +616,36 @@ export default function Admin() {
                                                     </p>
                                                 </div>
                                             )}
-                                            <div className="mt-auto pt-3 flex gap-2">
-                                                <button
-                                                    onClick={() => handleMediaStatus(m.id, "APPROVED")}
-                                                    className="flex-1 bg-emerald-100 text-emerald-700 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-200 transition"
-                                                >
-                                                    Aprobar
-                                                </button>
-                                                <button
-                                                    onClick={() => handleMediaStatus(m.id, "REJECTED")}
-                                                    className="flex-1 bg-red-100 text-red-700 py-1.5 rounded-lg text-sm font-medium hover:bg-red-200 transition"
-                                                >
-                                                    Rechazar
-                                                </button>
+                                            <div className="mt-auto pt-3 flex flex-col gap-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleMediaStatus(m.id, "APPROVED")}
+                                                        className="flex-1 bg-emerald-100 text-emerald-700 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-200 transition"
+                                                    >
+                                                        Aprobar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMediaStatus(m.id, "REJECTED")}
+                                                        className="flex-1 bg-red-100 text-red-700 py-1.5 rounded-lg text-xs font-medium hover:bg-red-200 transition"
+                                                    >
+                                                        Rechazar
+                                                    </button>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleMediaStatus(m.id, "REJECTED", true)}
+                                                        className="flex-1 bg-orange-100 text-orange-800 py-1.5 rounded-lg text-xs font-medium hover:bg-orange-200 transition"
+                                                    >
+                                                        Rechazar y Advertir
+                                                    </button>
+                                                    <Link
+                                                        to={`/users/${m.report?.user?.id || m.comment?.user?.id}`}
+                                                        target="_blank"
+                                                        className="flex-1 bg-blue-100 text-blue-800 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-200 transition text-center flex items-center justify-center"
+                                                    >
+                                                        Detalle de usuario
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -662,12 +679,22 @@ export default function Admin() {
                                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                                                 {u.role}
                                             </span>
+                                            {!u.active && (
+                                                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                                    Baneado
+                                                </span>
+                                            )}
                                             <span className="text-xs text-gray-400">
                                                 ⭐ {u.reputation} pts
                                             </span>
                                             <span className="text-xs text-gray-400">
                                                 📋 {u._count?.reports} reportes
                                             </span>
+                                            {u.warnings > 0 && (
+                                                <span className="text-xs text-orange-600 font-medium">
+                                                    ⚠ {u.warnings} advertencias
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     {u.id !== user.id && u.role !== "ADMIN" && (

@@ -199,6 +199,7 @@ const getUsers = async () => {
             email: true,
             role: true,
             reputation: true,
+            warnings: true,
             active: true,
             createdAt: true,
             _count: { select: { reports: true } },
@@ -272,7 +273,7 @@ const getPendingMedia = async () => {
                 select: {
                     id: true,
                     title: true,
-                    user: { select: { firstName: true, lastName: true, email: true } },
+                    user: { select: { id: true, firstName: true, lastName: true, email: true } },
                 },
             },
             comment: {
@@ -280,14 +281,40 @@ const getPendingMedia = async () => {
                     id: true,
                     content: true,
                     reportId: true,
-                    user: { select: { firstName: true, lastName: true, email: true } },
+                    user: { select: { id: true, firstName: true, lastName: true, email: true } },
                 },
             },
         },
     });
 };
 
-const updateMediaStatus = async (mediaId, status) => {
+const updateMediaStatus = async (mediaId, status, warnUser = false) => {
+    const media = await prisma.media.findUnique({
+        where: { id: mediaId },
+        include: { report: true, comment: true }
+    });
+
+    if (!media) throw new Error("Media no encontrada");
+
+    // Determinar el dueño del medio
+    const userId = media.report?.userId || media.comment?.userId;
+
+    if (warnUser && userId) {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { warnings: { increment: 1 } }
+        });
+
+        // Si llega a 3 advertencias, banear
+        if (user.warnings >= 3) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { active: false }
+            });
+            // Opcional: Crear un actionLog de ban automático
+        }
+    }
+
     return prisma.media.update({
         where: { id: mediaId },
         data: { status },

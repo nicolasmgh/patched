@@ -102,7 +102,8 @@ const updateMediaStatus = async (req, res) => {
     try {
         const media = await adminService.updateMediaStatus(
             req.params.id,
-            req.body.status
+            req.body.status,
+            req.body.warnUser
         );
         res.status(200).json({ ok: true, media });
     } catch (err) {
