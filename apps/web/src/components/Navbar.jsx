@@ -29,6 +29,13 @@ export default function Navbar() {
                     </Link>
                 )}
 
+                <Link
+                    to="/stats"
+                    className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                    Estadísticas
+                </Link>
+
                 {user ? (
                     <>
                         <Link

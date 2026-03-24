@@ -10,6 +10,8 @@ import PublicProfile from "./pages/PublicProfile";
 import Admin from "./pages/Admin";
 import AdminReport from "./pages/AdminReport";
 
+import Stats from './pages/Stats'
+
 function App() {
     return (
         <Routes>
@@ -22,7 +24,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
             <Route path="/users/:userId" element={<PublicProfile />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/reports/:id" element={<AdminReport />} />
+            <Route path="/admin/reports/:id" element={<AdminReport />} /><Route path="/stats" element={<Stats />} />
         </Routes>
     );
 }
