@@ -20,6 +20,15 @@ export default function Navbar() {
             </Link>
 
             <div className="flex items-center gap-4">
+                {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
+                    <Link
+                        to="/admin"
+                        className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                        Admin
+                    </Link>
+                )}
+
                 {user ? (
                     <>
                         <Link

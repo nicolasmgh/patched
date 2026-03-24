@@ -46,4 +46,33 @@ const getDashboard = async (req, res) => {
     }
 };
 
-module.exports = { changeStatus, modifyReport, getActionLogs, getDashboard };
+const getUsers = async (req, res) => {
+    try {
+        const users = await adminService.getUsers();
+        res.status(200).json({ ok: true, users });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+};
+
+const updateUserRole = async (req, res) => {
+    try {
+        const user = await adminService.updateUserRole(
+            req.params.userId,
+            req.body.role,
+            req.user.id,
+        );
+        res.status(200).json({ ok: true, user });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
+module.exports = {
+    changeStatus,
+    modifyReport,
+    getActionLogs,
+    getDashboard,
+    getUsers,
+    updateUserRole,
+};

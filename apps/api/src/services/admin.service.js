@@ -189,4 +189,51 @@ const getDashboard = async () => {
     };
 };
 
-module.exports = { changeStatus, modifyReport, getActionLogs, getDashboard };
+const getUsers = async () => {
+    return prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+            reputation: true,
+            active: true,
+            createdAt: true,
+            _count: { select: { reports: true } },
+        },
+    });
+};
+
+const updateUserRole = async (userId, role, adminId) => {
+    const validRoles = ["USER", "COLLABORATOR"];
+    if (!validRoles.includes(role)) throw new Error("Rol inválido");
+
+    const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { role },
+    });
+
+    await prisma.actionLog.create({
+        data: {
+            action:
+                role === "COLLABORATOR"
+                    ? "GRANT_COLLABORATOR"
+                    : "REVOKE_COLLABORATOR",
+            details: `Rol cambiado a ${role}`,
+            userId: adminId,
+        },
+    });
+
+    return updated;
+};
+
+module.exports = {
+    changeStatus,
+    modifyReport,
+    getActionLogs,
+    getDashboard,
+    getUsers,
+    updateUserRole,
+};
