@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const prisma = require("../utils/prisma");
 
 const changeStatus = async (reportId, status, adminId, details = null) => {
@@ -313,6 +315,25 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
             });
             // Opcional: Crear un actionLog de ban automático
         }
+    }
+
+    if (status === "REJECTED") {
+        // Eliminar también el archivo físico del servidor
+        try {
+            // media.url típicamente es algo como "/uploads/..." 
+            // Buscamos la ruta absoluta
+            const filePath = path.join(__dirname, "../../", media.url); 
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        } catch (err) {
+            console.error("Error al eliminar archivo físico:", err);
+        }
+
+        // Eliminar de la base de datos para no listarlo más
+        return prisma.media.delete({
+            where: { id: mediaId }
+        });
     }
 
     return prisma.media.update({
