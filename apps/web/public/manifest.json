@@ -1,0 +1,30 @@
+{
+  "name": "UrbanPatch",
+  "short_name": "UrbanPatch",
+  "description": "Reportá problemas de infraestructura urbana en tu ciudad",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuevo reporte",
+      "url": "/new-report",
+      "description": "Reportar un problema"
+    },
+    {
+      "name": "Ver mapa",
+      "url": "/",
+      "description": "Ver el mapa de reportes"
+    }
+  ]
+}
