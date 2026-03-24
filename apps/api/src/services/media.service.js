@@ -28,6 +28,28 @@ const attachToReport = async (
     return media;
 };
 
+const attachToComment = async (commentId, files) => {
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+    });
+    if (!comment) throw new Error("Comentario no encontrado");
+
+    const media = await Promise.all(
+        files.map((file) => {
+            const url = `/uploads/${file.filename}`;
+            return prisma.media.create({
+                data: {
+                    url,
+                    type: file.mimetype.startsWith("video") ? "VIDEO" : "PHOTO",
+                    commentId,
+                },
+            });
+        }),
+    );
+
+    return media;
+};
+
 const deleteMedia = async (mediaId, userId, userRole) => {
     const media = await prisma.media.findUnique({
         where: { id: mediaId },
@@ -57,4 +79,4 @@ const deleteMedia = async (mediaId, userId, userRole) => {
     return { deleted: true };
 };
 
-module.exports = { attachToReport, deleteMedia };
+module.exports = { attachToReport, attachToComment, deleteMedia };

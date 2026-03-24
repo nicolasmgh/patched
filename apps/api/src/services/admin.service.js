@@ -229,6 +229,40 @@ const updateUserRole = async (userId, role, adminId) => {
     return updated;
 };
 
+const getSuggestions = async (status) => {
+    const where = {};
+    if (status) {
+        where.status = status;
+    }
+    return prisma.reportSuggestion.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
+            report: {
+                select: {
+                    id: true,
+                    title: true,
+                },
+            },
+        },
+    });
+};
+
+const updateSuggestionStatus = async (suggestionId, status) => {
+    return prisma.reportSuggestion.update({
+        where: { id: suggestionId },
+        data: { status },
+    });
+};
+
 module.exports = {
     changeStatus,
     modifyReport,
@@ -236,4 +270,6 @@ module.exports = {
     getDashboard,
     getUsers,
     updateUserRole,
+    getSuggestions,
+    updateSuggestionStatus,
 };

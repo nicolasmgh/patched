@@ -68,6 +68,27 @@ const updateUserRole = async (req, res) => {
     }
 };
 
+const getSuggestions = async (req, res) => {
+    try {
+        const suggestions = await adminService.getSuggestions(req.query.status);
+        res.status(200).json({ ok: true, suggestions });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+};
+
+const updateSuggestionStatus = async (req, res) => {
+    try {
+        const suggestion = await adminService.updateSuggestionStatus(
+            req.params.id,
+            req.body.status,
+        );
+        res.status(200).json({ ok: true, suggestion });
+    } catch (err) {
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
 module.exports = {
     changeStatus,
     modifyReport,
@@ -75,4 +96,6 @@ module.exports = {
     getDashboard,
     getUsers,
     updateUserRole,
+    getSuggestions,
+    updateSuggestionStatus,
 };

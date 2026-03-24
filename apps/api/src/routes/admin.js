@@ -6,6 +6,8 @@ const {
     getDashboard,
     getUsers,
     updateUserRole,
+    getSuggestions,
+    updateSuggestionStatus,
 } = require("../controllers/admin.controller");
 const { authenticate, authorize } = require("../middlewares/auth.middleware");
 
@@ -18,5 +20,11 @@ router.get("/logs", ...isAdmin, getActionLogs);
 router.get("/dashboard", ...isPrivileged, getDashboard);
 router.get("/users", ...isAdmin, getUsers);
 router.patch("/users/:userId/role", ...isAdmin, updateUserRole);
+router.get("/suggestions", ...isPrivileged, getSuggestions);
+router.patch(
+    "/suggestions/:id/status",
+    ...isPrivileged,
+    updateSuggestionStatus,
+);
 
 module.exports = router;

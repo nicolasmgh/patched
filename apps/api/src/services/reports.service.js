@@ -38,7 +38,13 @@ const getAll = async (filters = {}) => {
 
     const where = {};
     if (category) where.category = category;
-    if (status) where.status = status;
+    if (status) {
+        if (status.includes(",")) {
+            where.status = { in: status.split(",") };
+        } else {
+            where.status = status;
+        }
+    }
     if (city) where.city = { contains: city, mode: "insensitive" };
     if (province) where.province = { contains: province, mode: "insensitive" };
     if (from || to) {
@@ -129,6 +135,24 @@ const getById = async (id) => {
     return sanitizeUser(report);
 };
 
+const createSuggestion = async (reportId, userId, data) => {
+    const { reason, message } = data;
+
+    const report = await prisma.report.findUnique({ where: { id: reportId } });
+    if (!report) throw new Error("Reporte no encontrado");
+
+    const suggestion = await prisma.reportSuggestion.create({
+        data: {
+            reason,
+            message,
+            reportId,
+            userId,
+        },
+    });
+
+    return suggestion;
+};
+
 // Ocultar apellido si hideLastName es true
 const sanitizeUser = (report) => {
     if (report.user?.hideLastName) {
@@ -137,4 +161,4 @@ const sanitizeUser = (report) => {
     return report;
 };
 
-module.exports = { create, getAll, getById };
+module.exports = { create, getAll, getById, createSuggestion };

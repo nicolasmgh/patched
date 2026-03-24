@@ -1,7 +1,11 @@
 const router = require("express").Router();
 const multer = require("multer");
 const path = require("path");
-const { upload, remove } = require("../controllers/media.controller");
+const {
+    upload,
+    uploadCommentMedia,
+    remove,
+} = require("../controllers/media.controller");
 const { authenticate } = require("../middlewares/auth.middleware");
 
 const storage = multer.diskStorage({
@@ -35,6 +39,12 @@ router.post(
     authenticate,
     uploader.array("files", 5),
     upload,
+);
+router.post(
+    "/comment/:commentId",
+    authenticate,
+    uploader.array("files", 3),
+    uploadCommentMedia,
 );
 router.delete("/:mediaId", authenticate, remove);
 

@@ -28,4 +28,18 @@ const getById = async (req, res) => {
     }
 };
 
-module.exports = { create, getAll, getById };
+const suggest = async (req, res) => {
+    try {
+        const suggestion = await reportsService.createSuggestion(
+            req.params.id,
+            req.user.id,
+            req.body,
+        );
+        res.status(201).json({ ok: true, suggestion });
+    } catch (err) {
+        console.error("Error en suggest:", err);
+        res.status(400).json({ ok: false, message: err.message });
+    }
+};
+
+module.exports = { create, getAll, getById, suggest };

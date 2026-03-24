@@ -70,7 +70,12 @@ enum ActionType {
   GRANT_COLLABORATOR
   REVOKE_COLLABORATOR
 }
-
+enum SuggestionStatus {
+  PENDING
+  REVIEWED
+  APPLIED
+  REJECTED
+}
 // ─── MODELOS ─────────────────────────────────────────
 
 model User {
@@ -91,6 +96,7 @@ model User {
 
   reports         Report[]
   categorySuggestions CategorySuggestion[]
+  reportSuggestions   ReportSuggestion[]
   confirmations   Confirmation[]
   comments        Comment[]
   commentLikes CommentLike[]
@@ -120,6 +126,7 @@ model Report {
   userId          String?
   user            User?         @relation(fields: [userId], references: [id])
   media           Media[]
+  reportSuggestions ReportSuggestion[]
   confirmations   Confirmation[]
   comments        Comment[]
   follows         Follow[]
@@ -136,10 +143,27 @@ model CategorySuggestion {
   createdAt   DateTime  @default(now())
 }
 
+model ReportSuggestion {
+  id          String           @id @default(uuid())
+  reason      String           
+  message     String
+  status      SuggestionStatus @default(PENDING)
+  
+  reportId    String
+  report      Report           @relation(fields: [reportId], references: [id])
+  
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
 model Media {
   id          String      @id @default(uuid())
   url         String
   type        MediaType   @default(PHOTO)
+  status      Status      @default(PENDING)
   isBefore    Boolean     @default(false)  // para el antes/despues
   isAfter     Boolean     @default(false)
   reportId    String?
