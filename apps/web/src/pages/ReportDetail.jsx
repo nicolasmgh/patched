@@ -672,45 +672,37 @@ export default function ReportDetail() {
                                                         timeStyle: "short",
                                                     })}
                                                 </p>
-                                                {user &&
-                                                    user.id !== c.userId && (
-                                                        <button
-                                                            onClick={async () => {
-                                                                try {
-                                                                    if (liked) {
-                                                                        await api.delete(
-                                                                            `/interactions/like/${c.id}`,
-                                                                        );
-                                                                    } else {
-                                                                        await api.post(
-                                                                            `/interactions/like/${c.id}`,
-                                                                        );
-                                                                    }
-                                                                    fetchReport();
-                                                                } catch (err) {
-                                                                    alert(
-                                                                        err
-                                                                            .response
-                                                                            ?.data
-                                                                            ?.message ||
-                                                                            "Error",
+                                                {user ? (
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                if (liked) {
+                                                                    await api.delete(
+                                                                        `/interactions/like/${c.id}`,
+                                                                    );
+                                                                } else {
+                                                                    await api.post(
+                                                                        `/interactions/like/${c.id}`,
                                                                     );
                                                                 }
-                                                            }}
-                                                            className={`text-xs flex items-center gap-1 transition ${
-                                                                liked
-                                                                    ? "text-red-500"
-                                                                    : "text-gray-400 hover:text-red-400"
-                                                            }`}
-                                                        >
-                                                            â¤ï¸{" "}
-                                                            {c._count?.likes ||
-                                                                0}
-                                                        </button>
-                                                    )}
-                                                {!user && (
+                                                                fetchReport();
+                                                            } catch (err) {
+                                                                alert(
+                                                                    err.response
+                                                                        ?.data
+                                                                        ?.message ||
+                                                                        "Error",
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={`text-xs flex items-center gap-1 transition ${liked ? "text-red-500" : "text-gray-400 hover:text-red-400"}`}
+                                                    >
+                                                        ❤️{" "}
+                                                        {c._count?.likes || 0}
+                                                    </button>
+                                                ) : (
                                                     <span className="text-xs text-gray-300">
-                                                        â¤ï¸{" "}
+                                                        ❤️{" "}
                                                         {c._count?.likes || 0}
                                                     </span>
                                                 )}
@@ -966,8 +958,8 @@ export default function ReportDetail() {
                             Â¡Subida exitosa!
                         </h2>
                         <p className="text-gray-600 mb-4 inline-block mx-auto text-left">
-                            La imagen se subió correctamente y está pendiente
-                            de moderación.
+                            La imagen se subió correctamente y está pendiente de
+                            moderación.
                         </p>
                         <button
                             onClick={() => setShowUploadModal(false)}
