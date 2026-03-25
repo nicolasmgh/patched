@@ -34,16 +34,26 @@ const getProfile = async (userId) => {
     if (!user) throw new Error("Usuario no encontrado");
 
     const { password, ...rest } = user;
-    if (rest.hideLastName) rest.lastName = null;
 
     return rest;
 };
 
 const updateProfile = async (userId, data) => {
-    const allowed = ["firstName", "lastName", "hideLastName", "avatarUrl"];
+    const allowed = ["firstName", "lastName", "hideLastName", "avatarUrl", "username"];
     const filtered = Object.fromEntries(
         Object.entries(data).filter(([key]) => allowed.includes(key)),
     );
+
+    // Si envían un username, asegurarnos de que sea alfanumérico y único
+    if (filtered.username) {
+        filtered.username = filtered.username.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+        const existing = await prisma.user.findUnique({
+            where: { username: filtered.username }
+        });
+        if (existing && existing.id !== userId) {
+            throw new Error("El nombre de usuario ya está en uso");
+        }
+    }
 
     const updated = await prisma.user.update({
         where: { id: userId },
@@ -70,14 +80,17 @@ const markNotificationsRead = async (userId) => {
     return { updated: true };
 };
 
-const getPublicProfile = async (userId) => {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
+const getPublicProfile = async (identifier) => {
+    const isId = identifier.length === 36;
+    
+    const user = await prisma.user.findFirst({
+        where: isId ? { id: identifier } : { username: identifier },
         select: {
             id: true,
             firstName: true,
             lastName: true,
             hideLastName: true,
+            username: true,
             avatarUrl: true,
             reputation: true,
             createdAt: true,

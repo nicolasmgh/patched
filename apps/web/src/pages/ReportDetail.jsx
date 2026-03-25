@@ -56,6 +56,29 @@ const URGENCY_COLORS = {
     HIGH: "text-red-500",
 };
 
+const parseMentions = (text) => {
+    if (!text) return text;
+    const regex = /(@[a-zA-Z0-9_]+)/g;
+    const parts = text.split(regex);
+    
+    return parts.map((part, i) => {
+        if (regex.test(part)) {
+            const username = part.substring(1);
+            return (
+                <Link
+                    key={i}
+                    to={`/users/${username}`}
+                    className="text-emerald-600 font-medium hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {part}
+                </Link>
+            );
+        }
+        return part;
+    });
+};
+
 export default function ReportDetail() {
     const { id } = useParams();
     const { user } = useAuth();
@@ -165,6 +188,7 @@ export default function ReportDetail() {
                 await api.post(`/interactions/follow/${id}`);
                 setFollowed(true);
             }
+            fetchReport(); // fetch again to update counts
         } catch (err) {
             alert(err.response?.data?.message || "Error");
         }
@@ -238,23 +262,13 @@ export default function ReportDetail() {
     if (!report) return null;
 
     const beforePhotos = report.media.filter(
-        (m) =>
-            m.isBefore &&
-            (m.status === "APPROVED" ||
-                (user?.role === "ADMIN" && m.status !== "REJECTED")),
+        (m) => m.isBefore && m.status === "APPROVED"
     );
     const afterPhotos = report.media.filter(
-        (m) =>
-            m.isAfter &&
-            (m.status === "APPROVED" ||
-                (user?.role === "ADMIN" && m.status !== "REJECTED")),
+        (m) => m.isAfter && m.status === "APPROVED"
     );
     const generalPhotos = report.media.filter(
-        (m) =>
-            !m.isBefore &&
-            !m.isAfter &&
-            (m.status === "APPROVED" ||
-                (user?.role === "ADMIN" && m.status !== "REJECTED")),
+        (m) => !m.isBefore && !m.isAfter && m.status === "APPROVED"
     );
 
     return (
@@ -306,9 +320,10 @@ export default function ReportDetail() {
                         }
                         className="text-xs text-emerald-600 hover:underline"
                     >
-                        Reportado por {report.user?.firstName}{" "}
-                        {report.user?.hideLastName ? "" : report.user?.lastName}
-                    </Link>
+                            Reportado por {report.user?.firstName}{" "}
+                            {report.user?.hideLastName ? "" : report.user?.lastName}
+                            {report.user?.username && <span className="text-gray-500 ml-1 font-normal">@{report.user.username}</span>}
+                        </Link>
 
                     {/* Acciones */}
                     <div className="flex gap-3 mt-4">
@@ -584,12 +599,11 @@ export default function ReportDetail() {
                                                 className="text-sm font-medium text-gray-800 hover:text-emerald-600 transition"
                                             >
                                                 {c.user.firstName}{" "}
-                                                {c.user.hideLastName
-                                                    ? ""
-                                                    : c.user.lastName}
+                                                    {c.user.hideLastName ? "" : c.user.lastName}
+                                                    {c.user.username && <span className="text-gray-500 ml-1 font-normal">@{c.user.username}</span>}
                                             </Link>
-                                            <p className="text-sm text-gray-600">
-                                                {c.content}
+                                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                                                {parseMentions(c.content)}
                                             </p>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <p className="text-xs text-gray-400">
@@ -644,24 +658,12 @@ export default function ReportDetail() {
                                             </div>
                                             {c.media &&
                                                 c.media.filter(
-                                                    (m) =>
-                                                        m.status ===
-                                                            "APPROVED" ||
-                                                        (user?.role ===
-                                                            "ADMIN" &&
-                                                            m.status !==
-                                                                "REJECTED"),
+                                                    (m) => m.status === "APPROVED"
                                                 ).length > 0 && (
                                                     <div className="flex gap-2 mt-2">
                                                         {c.media
                                                             .filter(
-                                                                (m) =>
-                                                                    m.status ===
-                                                                        "APPROVED" ||
-                                                                    (user?.role ===
-                                                                        "ADMIN" &&
-                                                                        m.status !==
-                                                                            "REJECTED"),
+                                                                (m) => m.status === "APPROVED"
                                                             )
                                                             .map(
                                                                 (

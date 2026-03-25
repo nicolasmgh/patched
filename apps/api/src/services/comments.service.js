@@ -25,6 +25,27 @@ const create = async (reportId, userId, { content }) => {
         },
     });
 
+    const mentions = content.match(/@([a-zA-Z0-9_]+)/g) || [];
+    const mentionedUsernames = mentions.map(m => m.substring(1));
+    
+    if (mentionedUsernames.length > 0) {
+        const usersToNotify = await prisma.user.findMany({
+            where: { username: { in: mentionedUsernames } }
+        });
+        
+        await Promise.all(usersToNotify.map(u => {
+            if (u.id !== userId) {
+                return prisma.notification.create({
+                    data: {
+                        userId: u.id,
+                        type: "USER_MENTIONED",
+                        message: `Has sido mencionado en un comentario del reporte "${report.title}".`,
+                    }
+                });
+            }
+        }));
+    }
+
     // Reputación al dueño del reporte
     if (report.userId && report.userId !== userId) {
         await prisma.user.update({

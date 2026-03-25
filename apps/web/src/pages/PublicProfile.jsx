@@ -97,7 +97,12 @@ export default function PublicProfile() {
                                 {profile.firstName}{" "}
                                 {profile.hideLastName ? "" : profile.lastName}
                             </h1>
-                            <span className="text-xs text-gray-400">
+                            {profile.username && (
+                                <p className="text-sm font-medium text-emerald-600">
+                                    @{profile.username}
+                                </p>
+                            )}
+                            <span className="text-xs text-gray-400 mt-1 block">
                                 ⭐ {profile.reputation} pts
                             </span>
                         </div>

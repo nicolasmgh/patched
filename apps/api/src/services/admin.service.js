@@ -238,6 +238,16 @@ const toggleUserStatus = async (userId, active, adminId) => {
         data: { active },
     });
 
+    await prisma.notification.create({
+        data: {
+            userId: userId,
+            type: active ? "USER_UNBANNED" : "USER_BANNED",
+            message: active
+                ? "Tu cuenta ha sido reactivada."
+                : "Tu cuenta ha sido suspendida por incumplir las normas.",
+        },
+    });
+
     if (active) {
         // Al desbanear un usuario, se completan (o cancelan) sus apelaciones anteriores
         // pasándolas a APPLIED para que pueda volver a apelar en el futuro si es baneado de nuevo.
@@ -356,22 +366,49 @@ const getPendingMedia = async () => {
 const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     const media = await prisma.media.findUnique({
         where: { id: mediaId },
-        include: { report: true, comment: true },
+        include: { 
+            report: true, 
+            comment: {
+                include: { report: true }
+            } 
+        },
     });
 
     if (!media) throw new Error("Media no encontrada");
 
-    // Determinar el dueño del medio
+    // Determinar el dueño del medio y el título del reporte
     const userId = media.report?.userId || media.comment?.userId;
+    const reportTitle = media.report?.title || media.comment?.report?.title || "desconocido";
+    const reportId = media.reportId || media.comment?.reportId;
 
     if (warnUser && userId) {
         const user = await prisma.user.update({
             where: { id: userId },
             data: { warnings: { increment: 1 } },
         });
+        
+        await prisma.notification.create({
+            data: {
+                userId: userId,
+                type: "USER_WARNED",
+                message: "Has sido advertido por subir contenido inapropiado. Acumular advertencias puede resultar en la suspensión de tu cuenta.",
+                data: reportId ? { reportId } : null,
+            }
+        });
     }
 
     if (status === "REJECTED") {
+        if (userId) {
+            await prisma.notification.create({
+                data: {
+                    userId: userId,
+                    type: "MEDIA_REJECTED",
+                    message: `Una imagen o video que subiste en el reporte "${reportTitle}" fue rechazado y eliminado por no cumplir con nuestras normas.`,
+                    data: reportId ? { reportId } : null,
+                }
+            });
+        }
+        
         // Eliminar también el archivo físico del servidor
         try {
             // media.url típicamente es algo como "/uploads/..."
@@ -388,6 +425,19 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
         return prisma.media.delete({
             where: { id: mediaId },
         });
+    }
+
+    if (status === "APPROVED") {
+        if (userId) {
+            await prisma.notification.create({
+                data: {
+                    userId: userId,
+                    type: "MEDIA_ACCEPTED",
+                    message: `¡Tu archivo multimedia en el reporte "${reportTitle}" ha sido aprobado y ahora es visible!`,
+                    data: reportId ? { reportId } : null,
+                }
+            });
+        }
     }
 
     return prisma.media.update({

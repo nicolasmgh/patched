@@ -257,10 +257,7 @@ export default function Home() {
                                         const filteredMedia =
                                             selectedReport.media.filter(
                                                 (m) =>
-                                                    m.status === "APPROVED" ||
-                                                    (user?.role === "ADMIN" &&
-                                                        m.status !==
-                                                            "REJECTED"),
+                                                    m.status === "APPROVED"
                                             );
                                         return (
                                             filteredMedia.length > 0 && (

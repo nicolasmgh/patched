@@ -58,6 +58,13 @@ enum NotificationType {
   CONFIRMATION_ON_REPORT
   BADGE_EARNED
   COLLABORATOR_GRANTED
+  MEDIA_ACCEPTED
+  MEDIA_REJECTED
+  USER_WARNED
+  USER_BANNED
+  USER_UNBANNED
+  USER_MENTIONED
+  REPORT_FOLLOWED
 }
 
 enum ActionType {
@@ -83,6 +90,7 @@ enum SuggestionStatus {
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
+  username     String?  @unique
   password     String?
   firstName    String
   lastName     String
@@ -249,6 +257,7 @@ model Notification {
   id        String           @id @default(uuid())
   type      NotificationType
   message   String
+  data      Json?
   read      Boolean          @default(false)
   userId    String
   user      User             @relation(fields: [userId], references: [id])
