@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Map from "../components/Map";
+import UserAvatar from "../components/UserAvatar";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -160,7 +161,7 @@ export default function Home() {
                 {!sidebarOpen && (
                     <button
                         onClick={() => setSidebarOpen(true)}
-                        className="absolute top-3 left-3 z-[1000] bg-white rounded-lg shadow-md p-2 hover:bg-gray-50 transition"
+                        className="absolute top-3 left-3 z-[1000] bg-white rounded-lg shadow-md p-2 hover:bg-gray-50 transition cursor-pointer"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -203,7 +204,7 @@ export default function Home() {
                                 <div className="p-4 border-b border-gray-100">
                                     <button
                                         onClick={handleCloseReport}
-                                        className="text-xs text-gray-400 hover:text-gray-600 mb-2 flex items-center gap-1"
+                                        className="text-xs text-gray-400 hover:text-gray-600 mb-2 flex items-center gap-1 cursor-pointer"
                                     >
                                         ← Cerrar
                                     </button>
@@ -432,7 +433,7 @@ export default function Home() {
                                                             report,
                                                         )
                                                     }
-                                                    className="w-full text-left block p-4 border-b border-gray-100 hover:bg-gray-50 transition"
+                                                    className="w-full text-left block p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
                                                 >
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex items-start gap-2">
@@ -513,13 +514,13 @@ export default function Home() {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setSuggestPosition(null)}
-                                className="text-sm text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+                                className="text-sm text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleSuggestConfirm}
-                                className="text-sm bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition font-medium"
+                                className="text-sm bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition font-medium cursor-pointer"
                             >
                                 Reportar acá
                             </button>
@@ -530,60 +531,96 @@ export default function Home() {
 
             {/* Lightbox Modal */}
             {lightboxMedia && (
-                <div className="fixed inset-0 z-[10000] bg-black/95 flex items-center justify-center">
+                <div className="fixed inset-0 z-[10000] bg-black/95 flex flex-col items-center justify-center">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             setLightboxMedia(null);
                         }}
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 w-10 h-10 flex items-center justify-center text-3xl font-light"
+                        className="absolute top-4 right-4 z-20 text-white hover:text-gray-300 w-10 h-10 flex items-center justify-center text-4xl font-light cursor-pointer"
                     >
                         &times;
                     </button>
-                    {lightboxMedia.length > 1 && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
-                            {lightboxIndex + 1} / {lightboxMedia.length}
-                        </div>
-                    )}
-                    {lightboxMedia.length > 1 && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                prevMedia();
-                            }}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-3xl pb-1"
-                        >
-                            &#8249;
-                        </button>
-                    )}
 
-                    <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
-                        {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
-                            <video
-                                src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
-                                controls
-                                autoPlay
-                                className="max-w-full max-h-[90vh] rounded"
-                            />
-                        ) : (
-                            <img
-                                src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
-                                alt="Vista ampliada"
-                                className="max-w-full max-h-[90vh] object-contain rounded"
-                            />
+                    <div className="relative flex-1 w-full flex items-center justify-center min-h-0 py-8">
+                        {lightboxMedia.length > 1 && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    prevMedia();
+                                }}
+                                className="absolute left-2 md:left-8 z-10 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-4xl pb-1 cursor-pointer"
+                            >
+                                &#8249;
+                            </button>
+                        )}
+
+                        <div className="relative max-w-[90vw] max-h-full flex items-center justify-center">
+                            {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
+                                <video
+                                    src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
+                                    controls
+                                    autoPlay
+                                    className="max-w-full max-h-[80vh] object-contain rounded"
+                                />
+                            ) : (
+                                <img
+                                    src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
+                                    alt="Vista ampliada"
+                                    className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
+                                />
+                            )}
+                            
+                            {/* Contador de imágenes */}
+                            {lightboxMedia.length > 1 && (
+                                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
+                                    {lightboxIndex + 1} / {lightboxMedia.length}
+                                </div>
+                            )}
+                        </div>
+
+                        {lightboxMedia.length > 1 && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    nextMedia();
+                                }}
+                                className="absolute right-2 md:right-8 z-10 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-4xl pb-1 cursor-pointer"
+                            >
+                                &#8250;
+                            </button>
                         )}
                     </div>
-
-                    {lightboxMedia.length > 1 && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                nextMedia();
-                            }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-3xl pb-1"
-                        >
-                            &#8250;
-                        </button>
+                    
+                    {/* Footer con info del uploader estilo Komoot */}
+                    {lightboxMedia[lightboxIndex].user && (
+                        <div className="w-full shrink-0 h-24 flex items-center justify-center pb-6">
+                            <Link 
+                                to={`/users/${lightboxMedia[lightboxIndex].user.id}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLightboxMedia(null);
+                                }}
+                                className="flex items-center gap-3 hover:bg-white/5 p-2 rounded-xl transition cursor-pointer"
+                            >
+                                <UserAvatar user={lightboxMedia[lightboxIndex].user} className="w-10 h-10 border border-gray-600" textClass="text-lg" fallbackBg="bg-emerald-600" fallbackText="text-white" />
+                                <div className="flex flex-col text-left">
+                                    <span className="text-gray-300 text-sm">
+                                        Foto por{" "}
+                                        <span className="text-emerald-500 font-medium hover:underline transition">
+                                            {lightboxMedia[lightboxIndex].user.firstName} {lightboxMedia[lightboxIndex].user.hideLastName ? "" : lightboxMedia[lightboxIndex].user.lastName}
+                                        </span>
+                                    </span>
+                                    <span className="text-gray-500 text-xs mt-0.5">
+                                        {new Date(lightboxMedia[lightboxIndex].createdAt || Date.now()).toLocaleDateString("es-AR", {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric"
+                                        })}
+                                    </span>
+                                </div>
+                            </Link>
+                        </div>
                     )}
                 </div>
             )}

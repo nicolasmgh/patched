@@ -38,6 +38,8 @@ const CATEGORY_LABELS = {
     OTHER: "Otro",
 };
 
+import UserAvatar from "../components/UserAvatar";
+
 export default function PublicProfile() {
     const { userId } = useParams();
     const { user } = useAuth();
@@ -89,9 +91,7 @@ export default function PublicProfile() {
                 {/* Header */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-2xl font-bold text-emerald-700">
-                            {profile.firstName[0]}
-                        </div>
+                        <UserAvatar user={profile} className="w-16 h-16" textClass="text-2xl" />
                         <div>
                             <h1 className="text-xl font-bold text-gray-900">
                                 {profile.firstName}{" "}

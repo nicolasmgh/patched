@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import UserAvatar from "../components/UserAvatar";
 
 const STATUS_LABELS = {
     PENDING: "Pendiente",
@@ -280,9 +281,7 @@ export default function AdminReport() {
                                     key={c.id}
                                     className={`flex gap-3 p-3 rounded-xl ${c.flagged ? "bg-red-50 border border-red-100" : "bg-gray-50"}`}
                                 >
-                                    <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700 shrink-0">
-                                        {c.user?.firstName[0]}
-                                    </div>
+                                    <UserAvatar user={c.user} className="w-7 h-7 text-xs" />
                                     <div className="flex-1">
                                         <p className="text-xs font-medium text-gray-700">
                                             {c.user?.firstName}{" "}

@@ -718,15 +718,13 @@ export default function Admin() {
                                                         {m.report?.title}
                                                     </Link>
                                                     <p className="text-xs text-gray-400 mt-0.5">
-                                                        por{" "}
-                                                        {
-                                                            m.report?.user
-                                                                ?.firstName
-                                                        }{" "}
-                                                        {
-                                                            m.report?.user
-                                                                ?.lastName
-                                                        }
+                                                        Subido por{" "}
+                                                        <span className="font-semibold text-gray-600">
+                                                            {m.user?.firstName} {m.user?.lastName}
+                                                        </span>
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        en reporte de {m.report?.user?.firstName}
                                                     </p>
                                                 </div>
                                             )}

@@ -1,11 +1,14 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapClickHandler } from "../components/Map";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { socket } from "../services/socket";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -30,6 +33,8 @@ const CATEGORY_LABELS = {
     GREEN_SPACES: "Espacios verdes",
     OTHER: "Otro",
 };
+
+import UserAvatar from "../components/UserAvatar";
 
 const STATUS_LABELS = {
     PENDING: "Pendiente",
@@ -90,6 +95,18 @@ export default function ReportDetail() {
     const [mentionResults, setMentionResults] = useState([]);
     const [showMentions, setShowMentions] = useState(false);
     const inputRef = useRef(null);
+    const mentionRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (mentionRef.current && !mentionRef.current.contains(event.target)) {
+                setShowMentions(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
     const [commentFiles, setCommentFiles] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [confirmed, setConfirmed] = useState(false);
@@ -108,6 +125,35 @@ export default function ReportDetail() {
     const [lightboxIndex, setLightboxIndex] = useState(0);
     const [showUploadModal, setShowUploadModal] = useState(false);
 
+    const [isEditingAdmin, setIsEditingAdmin] = useState(false);
+    const [adminEditForm, setAdminEditForm] = useState({});
+    const canEditAdmin =
+        user && (user.role === "ADMIN" || user.role === "COLLABORATOR");
+
+    const enableAdminEdit = () => {
+        setAdminEditForm({
+            title: report.title,
+            description: report.description || "",
+            address: report.address || "",
+            latitude: report.latitude,
+            longitude: report.longitude,
+        });
+        setIsEditingAdmin(true);
+    };
+
+    const saveAdminEdit = async () => {
+        try {
+            await api.patch(`/admin/reports/${id}`, adminEditForm);
+            setIsEditingAdmin(false);
+            fetchReport();
+        } catch (err) {
+            alert(
+                "Error al guardar: " +
+                    (err.response?.data?.message || err.message),
+            );
+        }
+    };
+
     const openLightbox = (mediaArray, startIndex) => {
         setLightboxMedia(mediaArray);
         setLightboxIndex(startIndex);
@@ -124,6 +170,42 @@ export default function ReportDetail() {
                 (i) => (i - 1 + lightboxMedia.length) % lightboxMedia.length,
             );
     };
+
+    useEffect(() => {
+        console.log("Conectando eventos de socket para el reporte:", id);
+
+        const handleReportUpdate = (data) => {
+            console.log("📡 EVENTO RECIBIDO: reportUpdate", data);
+            if (String(data.id) === String(id)) {
+                setReport((prev) => prev ? ({ ...prev, ...data }) : prev);
+            }
+        };
+
+        const handleCommentAdded = (data) => {
+            console.log("📡 EVENTO RECIBIDO: commentAdded", data);
+            if (String(data.reportId) === String(id)) {
+                setReport(prev => {
+                    if (!prev) return prev;
+                    if (!prev.comments) prev.comments = [];
+                    const exists = prev.comments.some(c => c.id === data.id);
+                    if (exists) return prev;
+                    return {
+                        ...prev,
+                        comments: [...prev.comments, data] // Mantener coherencia visual agregándolo al final
+                    };
+                });
+            }
+        };
+
+        socket.on("reportUpdate", handleReportUpdate);
+        socket.on("commentAdded", handleCommentAdded);
+
+        return () => {
+            console.log("Desconectando eventos de socket...");
+            socket.off("reportUpdate", handleReportUpdate);
+            socket.off("commentAdded", handleCommentAdded);
+        };
+    }, [id]);
 
     useEffect(() => {
         fetchReport();
@@ -224,10 +306,27 @@ export default function ReportDetail() {
                 newComment.media = mediaRes.data.media;
             }
 
-            setReport((r) => ({
-                ...r,
-                comments: [...r.comments, newComment],
-            }));
+            // Ya no agregamos el comentario acá localmente si no tiene fotos,
+            // confiamos en el socket para que lo inserte (previene llaves duplicadas).
+            // Si hubiéramos actualizado localmente en el componente AND recibido el socket = 2 renders con mismo ID.
+            if (commentFiles.length > 0) {
+               // Si tiene imágenes por el problema de asincronía sí lo actualizamos aquí y el backend
+               // emitirá de igual manera pero con nuestro chequeo de "exists" arriba se omitirá duplicado.
+               setReport((r) => {
+                   const exists = r.comments?.some(c => c.id === newComment.id);
+                   if (exists) {
+                       return {
+                           ...r,
+                           comments: r.comments.map(c => c.id === newComment.id ? newComment : c)
+                       }
+                   }
+                   return {
+                       ...r,
+                       comments: [newComment, ...r.comments],
+                   };
+               });
+            }
+
             setComment("");
             setCommentFiles([]);
         } catch (err) {
@@ -265,6 +364,13 @@ export default function ReportDetail() {
             }
         } else {
             setShowMentions(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter" && showMentions && mentionResults.length > 0) {
+            e.preventDefault();
+            insertMention(mentionResults[0].username);
         }
     };
 
@@ -326,18 +432,60 @@ export default function ReportDetail() {
                 {/* Header */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
                     <div className="flex items-start justify-between gap-4 mb-3">
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            {report.title}
-                        </h1>
+                        <div className="flex-1 w-full">
+                            {isEditingAdmin ? (
+                                <input
+                                    type="text"
+                                    className="w-full text-2xl font-bold text-gray-900 border border-gray-300 rounded px-2 py-1 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={adminEditForm.title}
+                                    onChange={(e) =>
+                                        setAdminEditForm({
+                                            ...adminEditForm,
+                                            title: e.target.value,
+                                        })
+                                    }
+                                />
+                            ) : (
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-2xl font-bold text-gray-900">
+                                        {report.title}
+                                    </h1>
+                                    {canEditAdmin && (
+                                        <button
+                                            onClick={enableAdminEdit}
+                                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition shrink-0"
+                                        >
+                                            Editar (Admin)
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <span
                             className={`text-sm px-3 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[report.status]}`}
                         >
                             {STATUS_LABELS[report.status]}
                         </span>
                     </div>
-
                     <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
-                        <span>📍 {report.address || report.city}</span>
+                        <span>
+                            📍{" "}
+                            {isEditingAdmin ? (
+                                <input
+                                    type="text"
+                                    className="border border-gray-300 rounded px-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    value={adminEditForm.address}
+                                    onChange={(e) =>
+                                        setAdminEditForm({
+                                            ...adminEditForm,
+                                            address: e.target.value,
+                                        })
+                                    }
+                                />
+                            ) : (
+                                report.address || report.city
+                            )}
+                        </span>
                         <span>🏷️ {CATEGORY_LABELS[report.category]}</span>
                         <span
                             className={`font-medium ${URGENCY_COLORS[report.urgency]}`}
@@ -360,29 +508,35 @@ export default function ReportDetail() {
                     )}
 
                     {/* Reportado por */}
-                    <Link
-                        to={
-                            user?.id === report.user?.id
-                                ? "/profile"
-                                : `/users/${report.user?.id}`
-                        }
-                        className="text-xs text-emerald-600 hover:underline"
-                    >
-                        Reportado por {report.user?.firstName}{" "}
-                        {report.user?.hideLastName ? "" : report.user?.lastName}
-                        {report.user?.username && (
-                            <span className="text-gray-500 ml-1 font-normal">
-                                @{report.user.username}
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-gray-500">Reportado por</span>
+                        <Link
+                            to={
+                                user?.id === report.user?.id
+                                    ? "/profile"
+                                    : `/users/${report.user?.id}`
+                            }
+                            className="flex items-center gap-1.5 hover:bg-gray-50 rounded-full pr-2 transition cursor-pointer"
+                        >
+                            <UserAvatar user={report.user} className="w-5 h-5" textClass="text-[10px]" />
+                            <span className="text-xs text-emerald-600 font-medium hover:underline">
+                                {report.user?.firstName}{" "}
+                                {report.user?.hideLastName ? "" : report.user?.lastName}
+                                {report.user?.username && (
+                                    <span className="text-gray-500 ml-1 font-normal">
+                                        @{report.user.username}
+                                    </span>
+                                )}
                             </span>
-                        )}
-                    </Link>
+                        </Link>
+                    </div>
 
                     {/* Acciones */}
                     <div className="flex gap-3 mt-4">
                         <button
                             onClick={handleConfirm}
                             disabled={user?.id === report.userId}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
                                 confirmed
                                     ? "bg-emerald-600 text-white"
                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -393,7 +547,7 @@ export default function ReportDetail() {
 
                         <button
                             onClick={handleFollow}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
                                 followed
                                     ? "bg-blue-600 text-white"
                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -412,7 +566,7 @@ export default function ReportDetail() {
                                         window.location.href,
                                     );
                             }}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer"
                         >
                             📤 Compartir
                         </button>
@@ -420,7 +574,7 @@ export default function ReportDetail() {
                         {user && (
                             <button
                                 onClick={() => setShowSuggestModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 transition ml-auto"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 transition ml-auto cursor-pointer"
                             >
                                 ✏️ Sugerir cambios
                             </button>
@@ -431,9 +585,17 @@ export default function ReportDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     {/* Mapa */}
                     <div
-                        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+                        className="bg-white rounded-2xl border border-gray-200 overflow-hidden relative group"
                         style={{ height: 250 }}
                     >
+                        <a 
+                            href={`https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 shadow-sm border border-gray-200 z-[1000] hover:bg-emerald-50 hover:text-emerald-700 transition flex items-center gap-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                            🗺️ Abrir en Maps
+                        </a>
                         <MapContainer
                             center={[report.latitude, report.longitude]}
                             zoom={15}
@@ -638,9 +800,7 @@ export default function ReportDetail() {
                                     c.likes?.some((l) => l.userId === user.id);
                                 return (
                                     <div key={c.id} className="flex gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-medium text-emerald-700 shrink-0">
-                                            {c.user.firstName[0]}
-                                        </div>
+                                        <UserAvatar user={c.user} className="w-8 h-8" textClass="text-sm" />
                                         <div className="flex-1">
                                             <Link
                                                 to={
@@ -773,12 +933,13 @@ export default function ReportDetail() {
                             className="flex flex-col gap-2"
                         >
                             <div className="flex gap-3">
-                                <div className="relative flex-1">
+                                <div className="relative flex-1" ref={mentionRef}>
                                     <input
                                         ref={inputRef}
                                         type="text"
                                         value={comment}
                                         onChange={handleCommentChange}
+                                        onKeyDown={handleKeyDown}
                                         placeholder="Escribí un comentario..."
                                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                     />
@@ -795,9 +956,7 @@ export default function ReportDetail() {
                                                     }
                                                     className="w-full text-left px-4 py-2 hover:bg-emerald-50 flex items-center gap-2 cursor-pointer"
                                                 >
-                                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-medium text-emerald-700">
-                                                        {u.firstName[0]}
-                                                    </div>
+                                                    <UserAvatar user={u} className="w-6 h-6" textClass="text-xs" />
                                                     <div>
                                                         <div className="text-sm font-medium text-gray-900">
                                                             {u.firstName}
@@ -834,7 +993,7 @@ export default function ReportDetail() {
                                         (!comment.trim() &&
                                             commentFiles.length === 0)
                                     }
-                                    className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+                                    className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     Enviar
                                 </button>
@@ -973,51 +1132,86 @@ export default function ReportDetail() {
 
             {/* Lightbox */}
             {lightboxMedia && (
-                <div className="fixed inset-0 z-[10000] bg-black/95 flex items-center justify-center">
+                <div className="fixed inset-0 z-[10000] bg-black/95 flex flex-col items-center justify-center">
+                    {/* Botón cerrar */}
                     <button
                         onClick={() => setLightboxMedia(null)}
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 w-10 h-10 flex items-center justify-center text-3xl font-light"
+                        className="absolute top-4 right-4 z-20 text-white hover:text-gray-300 w-10 h-10 flex items-center justify-center text-4xl font-light cursor-pointer"
                     >
                         &times;
                     </button>
-                    {lightboxMedia.length > 1 && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
-                            {lightboxIndex + 1} / {lightboxMedia.length}
-                        </div>
-                    )}
-                    {lightboxMedia.length > 1 && (
-                        <button
-                            onClick={prevMedia}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-3xl pb-1"
-                        >
-                            &#8249;
-                        </button>
-                    )}
 
-                    <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
-                        {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
-                            <video
-                                src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
-                                controls
-                                autoPlay
-                                className="max-w-full max-h-[90vh] rounded"
-                            />
-                        ) : (
-                            <img
-                                src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
-                                alt="Vista ampliada"
-                                className="max-w-full max-h-[90vh] object-contain rounded"
-                            />
+                    {/* Contenedor de la Imagen/Video */}
+                    <div className="relative flex-1 w-full flex items-center justify-center min-h-0 py-8">
+                        {lightboxMedia.length > 1 && (
+                            <button
+                                onClick={prevMedia}
+                                className="absolute left-2 md:left-8 z-10 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-4xl pb-1 cursor-pointer"
+                            >
+                                &#8249;
+                            </button>
+                        )}
+                        
+                        <div className="relative max-w-[90vw] max-h-full flex items-center justify-center">
+                            {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
+                                <video
+                                    src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
+                                    controls
+                                    autoPlay
+                                    className="max-w-full max-h-[80vh] object-contain rounded"
+                                />
+                            ) : (
+                                <img
+                                    src={`http://localhost:3000${lightboxMedia[lightboxIndex].url}`}
+                                    alt="Vista ampliada"
+                                    className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
+                                />
+                            )}
+                            
+                            {/* Contador de imágenes */}
+                            {lightboxMedia.length > 1 && (
+                                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
+                                    {lightboxIndex + 1} / {lightboxMedia.length}
+                                </div>
+                            )}
+                        </div>
+
+                        {lightboxMedia.length > 1 && (
+                            <button
+                                onClick={nextMedia}
+                                className="absolute right-2 md:right-8 z-10 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-4xl pb-1 cursor-pointer"
+                            >
+                                &#8250;
+                            </button>
                         )}
                     </div>
 
-                    {lightboxMedia.length > 1 && (
-                        <button
-                            onClick={nextMedia}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:text-gray-300 hover:bg-white/10 rounded-full transition text-3xl pb-1"
-                        >
-                            &#8250;
-                        </button>
+                    {/* Footer con info del uploader estilo Komoot */}
+                    {lightboxMedia[lightboxIndex].user && (
+                        <div className="w-full shrink-0 h-24 flex items-center justify-center pb-6">
+                            <Link 
+                                to={`/users/${lightboxMedia[lightboxIndex].user.id}`}
+                                onClick={() => setLightboxMedia(null)}
+                                className="flex items-center gap-3 hover:bg-white/5 p-2 rounded-xl transition cursor-pointer"
+                            >
+                                <UserAvatar user={lightboxMedia[lightboxIndex].user} className="w-10 h-10 border border-gray-600" textClass="text-lg" fallbackBg="bg-emerald-600" fallbackText="text-white" />
+                                <div className="flex flex-col text-left">
+                                    <span className="text-gray-300 text-sm">
+                                        Foto por{" "}
+                                        <span className="text-emerald-500 font-medium hover:underline transition">
+                                            {lightboxMedia[lightboxIndex].user.firstName} {lightboxMedia[lightboxIndex].user.hideLastName ? "" : lightboxMedia[lightboxIndex].user.lastName}
+                                        </span>
+                                    </span>
+                                    <span className="text-gray-500 text-xs mt-0.5">
+                                        {new Date(lightboxMedia[lightboxIndex].createdAt || Date.now()).toLocaleDateString("es-AR", {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric"
+                                        })}
+                                    </span>
+                                </div>
+                            </Link>
+                        </div>
                     )}
                 </div>
             )}

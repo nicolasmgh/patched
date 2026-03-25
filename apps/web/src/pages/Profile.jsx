@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import UserAvatar from "../components/UserAvatar";
 
 const STATUS_LABELS = {
     PENDING: "Pendiente",
@@ -48,6 +49,7 @@ export default function Profile() {
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState({});
     const [saving, setSaving] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -87,10 +89,28 @@ export default function Profile() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await api.patch("/users/me", form);
+            const formData = new FormData();
+            formData.append("firstName", form.firstName);
+            formData.append("lastName", form.lastName);
+            formData.append("hideLastName", form.hideLastName);
+            formData.append("username", form.username);
+            
+            if (form.avatarFile) {
+                formData.append("avatar", form.avatarFile);
+            }
+            if (form.removeAvatar) {
+                formData.append("removeAvatar", "true");
+            }
+
+            const res = await api.patch("/users/me", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                }
+            });
             setProfile((p) => ({ ...p, ...res.data.user }));
             login(res.data.user, localStorage.getItem("token"));
             setEditing(false);
+            setForm(prev => ({ ...prev, avatarFile: null, avatarPreview: null }));
         } catch (err) {
             alert(err.response?.data?.message || "Error al guardar");
         } finally {
@@ -129,8 +149,46 @@ export default function Profile() {
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
                     <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-2xl font-bold text-emerald-700">
-                                {profile?.firstName?.[0]}
+                            <div className="flex flex-col items-center gap-2">
+                                <div 
+                                    className={`relative ${editing ? 'cursor-pointer group' : ''}`}
+                                    onClick={() => editing && fileInputRef.current?.click()}
+                                >
+                                    <UserAvatar 
+                                        user={{
+                                            ...profile,
+                                            avatarUrl: form.removeAvatar ? null : (form.avatarPreview || profile?.avatarUrl)
+                                        }} 
+                                        className="w-16 h-16" 
+                                        textClass="text-2xl" 
+                                    />
+                                    {editing && (
+                                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-white text-xs font-semibold">Cambiar</span>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept=".jpg,.jpeg,.png,.webp"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                const previewUrl = URL.createObjectURL(file);
+                                                setForm(f => ({ ...f, avatarFile: file, avatarPreview: previewUrl, removeAvatar: false }));
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                {editing && (profile?.avatarUrl || form.avatarPreview) && !form.removeAvatar && (
+                                    <button 
+                                        onClick={() => setForm(f => ({ ...f, removeAvatar: true, avatarFile: null, avatarPreview: null }))}
+                                        className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                    >
+                                        Eliminar foto
+                                    </button>
+                                )}
                             </div>
                             <div>
                                 {editing ? (

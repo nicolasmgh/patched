@@ -2,17 +2,45 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api";
+import { socket } from "../services/socket";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [showNotif, setShowNotif] = useState(false);
+    const [hasSeenNotifs, setHasSeenNotifs] = useState(false);
     const dropRef = useRef(null);
 
     useEffect(() => {
         if (user) {
             fetchNotifications();
+
+            const handleNewNotification = (data) => {
+                console.log("🔔 EVENTO RECIBIDO EN NAVBAR: newNotification", data);
+                if (data.userId === user.id) {
+                    console.log("🔔 Coincide el usuario. Actualizando notificaciones...");
+                    setNotifications((prev) => [data, ...prev]);
+                    setHasSeenNotifs(false);
+                } else {
+                    console.log("🔔 No es para este usuario. Yo soy", user.id, "y es para", data.userId);
+                }
+            };
+            
+            const handleNotificationsRead = (data) => {
+                console.log("🔔 EVENTO RECIBIDO EN NAVBAR: notificationsRead", data);
+                if (data.userId === user.id) {
+                    setNotifications((n) => n.map((x) => ({ ...x, read: true })));
+                }
+            };
+
+            socket.on("newNotification", handleNewNotification);
+            socket.on("notificationsRead", handleNotificationsRead);
+
+            return () => {
+                socket.off("newNotification", handleNewNotification);
+                socket.off("notificationsRead", handleNotificationsRead);
+            };
         }
     }, [user]);
 
@@ -40,7 +68,26 @@ export default function Navbar() {
         try {
             await api.patch("/users/me/notifications/read");
             setNotifications((n) => n.map((x) => ({ ...x, read: true })));
+            setHasSeenNotifs(true);
         } catch (err) {}
+    };
+
+    const handleNotificationClick = async (n) => {
+        if (!n.read) {
+            try {
+                await api.patch(`/users/me/notifications/${n.id}/read`);
+                setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+            } catch (err) {
+                console.error("Error marking notification as read:", err);
+            }
+        }
+        
+        if (n.data?.reportId) {
+            let hash = "";
+            if (n.data?.commentId) hash = `#comment-${n.data.commentId}`;
+            navigate(`/reports/${n.data.reportId}${hash}`);
+            setShowNotif(false);
+        }
     };
 
     const handleLogout = () => {
@@ -80,11 +127,17 @@ export default function Navbar() {
                     <>
                         <div className="relative" ref={dropRef}>
                             <button
-                                onClick={() => setShowNotif(!showNotif)}
-                                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition"
+                                onClick={() => {
+                                    setShowNotif(!showNotif);
+                                    if (!showNotif) {
+                                        setHasSeenNotifs(true);
+                                        handleMarkRead();
+                                    }
+                                }}
+                                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition cursor-pointer"
                             >
                                 🔔
-                                {unreadCount > 0 && (
+                                {unreadCount > 0 && !hasSeenNotifs && (
                                     <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                                 )}
                             </button>
@@ -95,14 +148,6 @@ export default function Navbar() {
                                         <h3 className="font-semibold text-gray-800 text-sm">
                                             Notificaciones
                                         </h3>
-                                        {unreadCount > 0 && (
-                                            <button
-                                                onClick={handleMarkRead}
-                                                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                                            >
-                                                Marcar leídas
-                                            </button>
-                                        )}
                                     </div>
                                     <div className="max-h-96 overflow-y-auto">
                                         {notifications.length === 0 ? (
@@ -118,18 +163,16 @@ export default function Navbar() {
                                                             ? "bg-white"
                                                             : "bg-emerald-50/50"
                                                     }`}
-                                                    onClick={() => {
-                                                        if (n.data?.reportId) {
-                                                            navigate(
-                                                                `/reports/${n.data.reportId}`,
-                                                            );
-                                                            setShowNotif(false);
-                                                        }
-                                                    }}
+                                                    onClick={() => handleNotificationClick(n)}
                                                 >
                                                     <p className="text-gray-800">
                                                         {n.message}
                                                     </p>
+                                                    {n.data?.preview && (
+                                                        <p className="text-xs text-gray-500 mt-1 italic border-l-2 border-gray-300 pl-2">
+                                                            "{n.data.preview}"
+                                                        </p>
+                                                    )}
                                                     <span className="text-xs text-gray-400 mt-1 block">
                                                         {new Date(
                                                             n.createdAt,
@@ -172,7 +215,7 @@ export default function Navbar() {
                         </Link>
                         <button
                             onClick={handleLogout}
-                            className="text-sm text-red-500 hover:text-red-700"
+                            className="text-sm text-red-500 hover:text-red-700 cursor-pointer"
                         >
                             Salir
                         </button>
