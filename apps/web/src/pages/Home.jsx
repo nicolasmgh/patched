@@ -278,7 +278,7 @@ export default function Home() {
                                                                         idx,
                                                                     );
                                                                 }}
-                                                                className="w-full text-left relative aspect-square"
+                                                                className="w-full text-left relative aspect-square cursor-pointer"
                                                             >
                                                                 {m.type ===
                                                                 "VIDEO" ? (
@@ -359,7 +359,7 @@ export default function Home() {
                                             onClick={() =>
                                                 setSidebarOpen(false)
                                             }
-                                            className="text-gray-400 hover:text-gray-600 transition"
+                                            className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"

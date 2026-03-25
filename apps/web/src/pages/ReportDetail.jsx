@@ -386,6 +386,12 @@ export default function ReportDetail() {
         inputRef.current.focus();
     };
 
+    const handleReplyPrompt = (username) => {
+        if (!username) return;
+        setComment(prev => prev ? prev + ` @${username} ` : `@${username} `);
+        inputRef.current?.focus();
+    };
+
     const handleSuggest = async (e) => {
         e.preventDefault();
         setSuggesting(true);
@@ -799,8 +805,13 @@ export default function ReportDetail() {
                                     user &&
                                     c.likes?.some((l) => l.userId === user.id);
                                 return (
-                                    <div key={c.id} className="flex gap-3">
-                                        <UserAvatar user={c.user} className="w-8 h-8" textClass="text-sm" />
+                                    <div key={c.id} id={`comment-${c.id}`} className="flex gap-3">
+                                        <Link 
+                                            to={user?.id === c.userId ? "/profile" : `/users/${c.user.id}`}
+                                            className="shrink-0 cursor-pointer"
+                                        >
+                                            <UserAvatar user={c.user} className="w-8 h-8" textClass="text-sm" />
+                                        </Link>
                                         <div className="flex-1">
                                             <Link
                                                 to={
@@ -833,33 +844,43 @@ export default function ReportDetail() {
                                                     })}
                                                 </p>
                                                 {user ? (
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                if (liked) {
-                                                                    await api.delete(
-                                                                        `/interactions/like/${c.id}`,
-                                                                    );
-                                                                } else {
-                                                                    await api.post(
-                                                                        `/interactions/like/${c.id}`,
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    if (liked) {
+                                                                        await api.delete(
+                                                                            `/interactions/like/${c.id}`,
+                                                                        );
+                                                                    } else {
+                                                                        await api.post(
+                                                                            `/interactions/like/${c.id}`,
+                                                                        );
+                                                                    }
+                                                                    fetchReport();
+                                                                } catch (err) {
+                                                                    alert(
+                                                                        err.response
+                                                                            ?.data
+                                                                            ?.message ||
+                                                                            "Error",
                                                                     );
                                                                 }
-                                                                fetchReport();
-                                                            } catch (err) {
-                                                                alert(
-                                                                    err.response
-                                                                        ?.data
-                                                                        ?.message ||
-                                                                        "Error",
-                                                                );
-                                                            }
-                                                        }}
-                                                        className={`text-xs flex items-center gap-1 transition ${liked ? "text-red-500" : "text-gray-400 hover:text-red-400"}`}
-                                                    >
-                                                        ❤️{" "}
-                                                        {c._count?.likes || 0}
-                                                    </button>
+                                                            }}
+                                                            className={`text-xs flex items-center gap-1 transition cursor-pointer ${liked ? "text-red-500" : "text-gray-400 hover:text-red-400"}`}
+                                                        >
+                                                            ❤️{" "}
+                                                            {c._count?.likes || 0}
+                                                        </button>
+                                                        {c.user?.username && (
+                                                            <button
+                                                                onClick={() => handleReplyPrompt(c.user.username)}
+                                                                className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer"
+                                                            >
+                                                                Responder
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span className="text-xs text-gray-300">
                                                         ❤️{" "}
