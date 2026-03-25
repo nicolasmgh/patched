@@ -1,4 +1,4 @@
-const usersService = require("../services/users.service");
+﻿const usersService = require("../services/users.service");
 
 const getMyProfile = async (req, res) => {
     try {
@@ -45,10 +45,21 @@ const getPublicProfile = async (req, res) => {
     }
 };
 
+const search = async (req, res) => {
+    try {
+        const users = await usersService.searchUsers(req.query.q);
+        res.status(200).json({ ok: true, users });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+};
+
 module.exports = {
     getMyProfile,
     updateMyProfile,
     getNotifications,
     markNotificationsRead,
     getPublicProfile,
+    search,
 };
+

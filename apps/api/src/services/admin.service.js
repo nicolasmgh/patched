@@ -366,11 +366,11 @@ const getPendingMedia = async () => {
 const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     const media = await prisma.media.findUnique({
         where: { id: mediaId },
-        include: { 
-            report: true, 
+        include: {
+            report: true,
             comment: {
-                include: { report: true }
-            } 
+                include: { report: true },
+            },
         },
     });
 
@@ -378,7 +378,8 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
 
     // Determinar el dueño del medio y el título del reporte
     const userId = media.report?.userId || media.comment?.userId;
-    const reportTitle = media.report?.title || media.comment?.report?.title || "desconocido";
+    const reportTitle =
+        media.report?.title || media.comment?.report?.title || "desconocido";
     const reportId = media.reportId || media.comment?.reportId;
 
     if (warnUser && userId) {
@@ -386,14 +387,15 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
             where: { id: userId },
             data: { warnings: { increment: 1 } },
         });
-        
+
         await prisma.notification.create({
             data: {
                 userId: userId,
                 type: "USER_WARNED",
-                message: "Has sido advertido por subir contenido inapropiado. Acumular advertencias puede resultar en la suspensión de tu cuenta.",
+                message:
+                    "Has sido advertido por subir contenido inapropiado. Acumular advertencias puede resultar en la suspensión de tu cuenta.",
                 data: reportId ? { reportId } : null,
-            }
+            },
         });
     }
 
@@ -405,10 +407,10 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
                     type: "MEDIA_REJECTED",
                     message: `Una imagen o video que subiste en el reporte "${reportTitle}" fue rechazado y eliminado por no cumplir con nuestras normas.`,
                     data: reportId ? { reportId } : null,
-                }
+                },
             });
         }
-        
+
         // Eliminar también el archivo físico del servidor
         try {
             // media.url típicamente es algo como "/uploads/..."
@@ -429,13 +431,27 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
 
     if (status === "APPROVED") {
         if (userId) {
+            let increment = 0;
+            if (media.type === "PHOTO") {
+                increment = media.commentId ? 6 : 5;
+            } else if (media.type === "VIDEO") {
+                increment = 10;
+            }
+
+            if (increment > 0) {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { reputation: { increment } },
+                });
+            }
+
             await prisma.notification.create({
                 data: {
                     userId: userId,
                     type: "MEDIA_ACCEPTED",
                     message: `¡Tu archivo multimedia en el reporte "${reportTitle}" ha sido aprobado y ahora es visible!`,
                     data: reportId ? { reportId } : null,
-                }
+                },
             });
         }
     }

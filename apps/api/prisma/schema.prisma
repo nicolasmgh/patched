@@ -6,7 +6,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── ENUMS ───────────────────────────────────────────
+// â”€â”€â”€ ENUMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 enum Role {
   USER
@@ -18,15 +18,15 @@ enum Category {
   POTHOLE // Bache
   SIDEWALK // Vereda rota
   STREET_LIGHTING // Luminaria / alumbrado
-  ROAD_DAMAGE // Daño en calzada general
+  ROAD_DAMAGE // DaÃ±o en calzada general
   WASTE_MANAGEMENT // Basura / microbasurales
-  STORM_DRAINAGE // Desagüe / inundación
+  STORM_DRAINAGE // DesagÃ¼e / inundaciÃ³n
   WATER_SANITATION // Cloacas / agua corriente
-  POWER_GRID // Corte de luz / tendido eléctrico
-  TRAFFIC // Semáforos, señales, pasos a nivel
+  POWER_GRID // Corte de luz / tendido elÃ©ctrico
+  TRAFFIC // SemÃ¡foros, seÃ±ales, pasos a nivel
   PUBLIC_SAFETY // Seguridad urbana
   URBAN_PLANNING // Obras paralizadas, veredas sin terminar
-  GREEN_SPACES // Plazas, árboles, espacios verdes abandonados
+  GREEN_SPACES // Plazas, Ã¡rboles, espacios verdes abandonados
   OTHER // Otros
 }
 
@@ -64,6 +64,7 @@ enum NotificationType {
   USER_BANNED
   USER_UNBANNED
   USER_MENTIONED
+    COMMENT_LIKED
   REPORT_FOLLOWED
 }
 
@@ -85,7 +86,7 @@ enum SuggestionStatus {
   REJECTED
 }
 
-// ─── MODELOS ─────────────────────────────────────────
+// â”€â”€â”€ MODELOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model User {
   id           String   @id @default(uuid())
@@ -115,6 +116,7 @@ model User {
   badges              UserBadge[]
   notifications       Notification[]
   actionLogs          ActionLog[]
+  media               Media[]
 }
 
 model Report {
@@ -181,6 +183,8 @@ model Media {
   report    Report?   @relation(fields: [reportId], references: [id])
   commentId String?
   comment   Comment?  @relation(fields: [commentId], references: [id])
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id])
   createdAt DateTime  @default(now())
 }
 
@@ -274,3 +278,4 @@ model CommentLike {
 
   @@unique([commentId, userId])
 }
+

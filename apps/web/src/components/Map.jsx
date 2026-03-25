@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
     MapContainer,
     TileLayer,
@@ -98,6 +99,12 @@ export function MapClickHandler({ onMapClick }) {
 
 export function MapBoundsTracker({ onBoundsChange }) {
     const map = useMap();
+
+    useEffect(() => {
+        if (map) {
+            onBoundsChange(map.getBounds());
+        }
+    }, [map, onBoundsChange]);
 
     useMapEvents({
         moveend() {

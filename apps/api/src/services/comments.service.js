@@ -26,24 +26,26 @@ const create = async (reportId, userId, { content }) => {
     });
 
     const mentions = content.match(/@([a-zA-Z0-9_]+)/g) || [];
-    const mentionedUsernames = mentions.map(m => m.substring(1));
-    
+    const mentionedUsernames = mentions.map((m) => m.substring(1));
+
     if (mentionedUsernames.length > 0) {
         const usersToNotify = await prisma.user.findMany({
-            where: { username: { in: mentionedUsernames } }
+            where: { username: { in: mentionedUsernames } },
         });
-        
-        await Promise.all(usersToNotify.map(u => {
-            if (u.id !== userId) {
-                return prisma.notification.create({
-                    data: {
-                        userId: u.id,
-                        type: "USER_MENTIONED",
-                        message: `Has sido mencionado en un comentario del reporte "${report.title}".`,
-                    }
-                });
-            }
-        }));
+
+        await Promise.all(
+            usersToNotify.map((u) => {
+                if (u.id !== userId) {
+                    return prisma.notification.create({
+                        data: {
+                            userId: u.id,
+                            type: "USER_MENTIONED",
+                            message: `Has sido mencionado en un comentario del reporte "${report.title}".`,
+                        },
+                    });
+                }
+            }),
+        );
     }
 
     // Reputación al dueño del reporte
@@ -53,6 +55,12 @@ const create = async (reportId, userId, { content }) => {
             data: { reputation: { increment: 1 } },
         });
     }
+
+    // Reputación al comentarista (quien hizo el comentario)
+    await prisma.user.update({
+        where: { id: userId },
+        data: { reputation: { increment: 1 } },
+    });
 
     if (comment.user.hideLastName) comment.user.lastName = null;
 

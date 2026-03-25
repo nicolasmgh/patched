@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { useAuth } from "../context/AuthContext";
@@ -60,7 +60,7 @@ const parseMentions = (text) => {
     if (!text) return text;
     const regex = /(@[a-zA-Z0-9_]+)/g;
     const parts = text.split(regex);
-    
+
     return parts.map((part, i) => {
         if (regex.test(part)) {
             const username = part.substring(1);
@@ -86,6 +86,10 @@ export default function ReportDetail() {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [comment, setComment] = useState("");
+    const [mentionQuery, setMentionQuery] = useState("");
+    const [mentionResults, setMentionResults] = useState([]);
+    const [showMentions, setShowMentions] = useState(false);
+    const inputRef = useRef(null);
     const [commentFiles, setCommentFiles] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [confirmed, setConfirmed] = useState(false);
@@ -233,6 +237,49 @@ export default function ReportDetail() {
         }
     };
 
+    const fetchMentions = async (query) => {
+        try {
+            const res = await api.get(`/users/search?q=${query}`);
+            setMentionResults(res.data.users);
+            setShowMentions(res.data.users.length > 0);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleCommentChange = (e) => {
+        const value = e.target.value;
+        setComment(value);
+
+        const textBeforeCursor = value.slice(0, e.target.selectionStart);
+        const match = textBeforeCursor.match(/@(\w*)$/);
+
+        if (match) {
+            const query = match[1];
+            setMentionQuery(query);
+            if (query.length >= 1) {
+                fetchMentions(query);
+            } else {
+                setMentionResults([]);
+                setShowMentions(false);
+            }
+        } else {
+            setShowMentions(false);
+        }
+    };
+
+    const insertMention = (username) => {
+        const cursorPosition = inputRef.current.selectionStart;
+        const textBeforeCursor = comment.slice(0, cursorPosition);
+        const textAfterCursor = comment.slice(cursorPosition);
+        const textBeforeMention = textBeforeCursor.replace(/@\w*$/, "");
+
+        const newText = textBeforeMention + `@${username} ` + textAfterCursor;
+        setComment(newText);
+        setShowMentions(false);
+        inputRef.current.focus();
+    };
+
     const handleSuggest = async (e) => {
         e.preventDefault();
         setSuggesting(true);
@@ -262,13 +309,13 @@ export default function ReportDetail() {
     if (!report) return null;
 
     const beforePhotos = report.media.filter(
-        (m) => m.isBefore && m.status === "APPROVED"
+        (m) => m.isBefore && m.status === "APPROVED",
     );
     const afterPhotos = report.media.filter(
-        (m) => m.isAfter && m.status === "APPROVED"
+        (m) => m.isAfter && m.status === "APPROVED",
     );
     const generalPhotos = report.media.filter(
-        (m) => !m.isBefore && !m.isAfter && m.status === "APPROVED"
+        (m) => !m.isBefore && !m.isAfter && m.status === "APPROVED",
     );
 
     return (
@@ -299,8 +346,9 @@ export default function ReportDetail() {
                         </span>
                         <span>
                             📅{" "}
-                            {new Date(report.createdAt).toLocaleDateString(
+                            {new Date(report.createdAt).toLocaleString(
                                 "es-AR",
+                                { dateStyle: "short", timeStyle: "short" },
                             )}
                         </span>
                     </div>
@@ -320,10 +368,14 @@ export default function ReportDetail() {
                         }
                         className="text-xs text-emerald-600 hover:underline"
                     >
-                            Reportado por {report.user?.firstName}{" "}
-                            {report.user?.hideLastName ? "" : report.user?.lastName}
-                            {report.user?.username && <span className="text-gray-500 ml-1 font-normal">@{report.user.username}</span>}
-                        </Link>
+                        Reportado por {report.user?.firstName}{" "}
+                        {report.user?.hideLastName ? "" : report.user?.lastName}
+                        {report.user?.username && (
+                            <span className="text-gray-500 ml-1 font-normal">
+                                @{report.user.username}
+                            </span>
+                        )}
+                    </Link>
 
                     {/* Acciones */}
                     <div className="flex gap-3 mt-4">
@@ -454,7 +506,7 @@ export default function ReportDetail() {
                                     onClick={() =>
                                         openLightbox(generalPhotos, idx)
                                     }
-                                    className="w-full text-left relative aspect-square"
+                                    className="w-full text-left relative aspect-square cursor-pointer"
                                 >
                                     {m.type === "VIDEO" ? (
                                         <div className="w-full h-full bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
@@ -497,7 +549,7 @@ export default function ReportDetail() {
                                             onClick={() =>
                                                 openLightbox(beforePhotos, idx)
                                             }
-                                            className="relative text-left"
+                                            className="relative text-left cursor-pointer"
                                         >
                                             {m.type === "VIDEO" ? (
                                                 <div className="h-24 aspect-square bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
@@ -536,7 +588,7 @@ export default function ReportDetail() {
                                             onClick={() =>
                                                 openLightbox(afterPhotos, idx)
                                             }
-                                            className="relative text-left"
+                                            className="relative text-left cursor-pointer"
                                         >
                                             {m.type === "VIDEO" ? (
                                                 <div className="h-24 aspect-square bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
@@ -599,8 +651,14 @@ export default function ReportDetail() {
                                                 className="text-sm font-medium text-gray-800 hover:text-emerald-600 transition"
                                             >
                                                 {c.user.firstName}{" "}
-                                                    {c.user.hideLastName ? "" : c.user.lastName}
-                                                    {c.user.username && <span className="text-gray-500 ml-1 font-normal">@{c.user.username}</span>}
+                                                {c.user.hideLastName
+                                                    ? ""
+                                                    : c.user.lastName}
+                                                {c.user.username && (
+                                                    <span className="text-gray-500 ml-1 font-normal">
+                                                        @{c.user.username}
+                                                    </span>
+                                                )}
                                             </Link>
                                             <p className="text-sm text-gray-600 whitespace-pre-wrap">
                                                 {parseMentions(c.content)}
@@ -609,9 +667,10 @@ export default function ReportDetail() {
                                                 <p className="text-xs text-gray-400">
                                                     {new Date(
                                                         c.createdAt,
-                                                    ).toLocaleDateString(
-                                                        "es-AR",
-                                                    )}
+                                                    ).toLocaleString("es-AR", {
+                                                        dateStyle: "short",
+                                                        timeStyle: "short",
+                                                    })}
                                                 </p>
                                                 {user &&
                                                     user.id !== c.userId && (
@@ -644,26 +703,29 @@ export default function ReportDetail() {
                                                                     : "text-gray-400 hover:text-red-400"
                                                             }`}
                                                         >
-                                                            ❤️{" "}
+                                                            â¤ï¸{" "}
                                                             {c._count?.likes ||
                                                                 0}
                                                         </button>
                                                     )}
                                                 {!user && (
                                                     <span className="text-xs text-gray-300">
-                                                        ❤️{" "}
+                                                        â¤ï¸{" "}
                                                         {c._count?.likes || 0}
                                                     </span>
                                                 )}
                                             </div>
                                             {c.media &&
                                                 c.media.filter(
-                                                    (m) => m.status === "APPROVED"
+                                                    (m) =>
+                                                        m.status === "APPROVED",
                                                 ).length > 0 && (
                                                     <div className="flex gap-2 mt-2">
                                                         {c.media
                                                             .filter(
-                                                                (m) => m.status === "APPROVED"
+                                                                (m) =>
+                                                                    m.status ===
+                                                                    "APPROVED",
                                                             )
                                                             .map(
                                                                 (
@@ -681,7 +743,7 @@ export default function ReportDetail() {
                                                                                 idx,
                                                                             )
                                                                         }
-                                                                        className="text-left relative"
+                                                                        className="text-left relative cursor-pointer"
                                                                     >
                                                                         {m.type ===
                                                                         "VIDEO" ? (
@@ -719,13 +781,44 @@ export default function ReportDetail() {
                             className="flex flex-col gap-2"
                         >
                             <div className="flex gap-3">
-                                <input
-                                    type="text"
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    placeholder="Escribí un comentario..."
-                                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                />
+                                <div className="relative flex-1">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={comment}
+                                        onChange={handleCommentChange}
+                                        placeholder="Escribí un comentario..."
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    />
+                                    {showMentions && (
+                                        <div className="absolute bottom-full mb-1 left-0 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-[100]">
+                                            {mentionResults.map((u) => (
+                                                <button
+                                                    key={u.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        insertMention(
+                                                            u.username,
+                                                        )
+                                                    }
+                                                    className="w-full text-left px-4 py-2 hover:bg-emerald-50 flex items-center gap-2 cursor-pointer"
+                                                >
+                                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-medium text-emerald-700">
+                                                        {u.firstName[0]}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {u.firstName}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            @{u.username}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <label className="flex items-center justify-center px-3 py-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition w-10">
                                     <span className="text-gray-500">📷</span>
                                     <input
@@ -788,7 +881,7 @@ export default function ReportDetail() {
                         >
                             <div>
                                 <label className="text-sm font-medium text-gray-700 block mb-1">
-                                    ¿Qué querés reportar sobre este reporte?
+                                    Â¿Qué querés reportar sobre este reporte?
                                 </label>
                                 <select
                                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -870,11 +963,11 @@ export default function ReportDetail() {
                             ✓
                         </div>
                         <h2 className="text-xl font-bold text-gray-900 mb-2">
-                            ¡Subida exitosa!
+                            Â¡Subida exitosa!
                         </h2>
                         <p className="text-gray-600 mb-4 inline-block mx-auto text-left">
-                            La imagen se subió correctamente y está pendiente de
-                            moderación.
+                            La imagen se subió correctamente y está pendiente
+                            de moderación.
                         </p>
                         <button
                             onClick={() => setShowUploadModal(false)}

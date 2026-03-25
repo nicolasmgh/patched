@@ -23,7 +23,8 @@ export default function Navbar() {
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     const fetchNotifications = async () => {
@@ -91,7 +92,9 @@ export default function Navbar() {
                             {showNotif && (
                                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                                     <div className="flex items-center justify-between p-3 border-b border-gray-100 bg-gray-50">
-                                        <h3 className="font-semibold text-gray-800 text-sm">Notificaciones</h3>
+                                        <h3 className="font-semibold text-gray-800 text-sm">
+                                            Notificaciones
+                                        </h3>
                                         {unreadCount > 0 && (
                                             <button
                                                 onClick={handleMarkRead}
@@ -111,21 +114,34 @@ export default function Navbar() {
                                                 <div
                                                     key={n.id}
                                                     className={`p-3 border-b border-gray-100 text-sm cursor-pointer hover:bg-gray-50 transition ${
-                                                        n.read ? "bg-white" : "bg-emerald-50/50"
+                                                        n.read
+                                                            ? "bg-white"
+                                                            : "bg-emerald-50/50"
                                                     }`}
                                                     onClick={() => {
                                                         if (n.data?.reportId) {
-                                                            navigate(`/reports/${n.data.reportId}`);
+                                                            navigate(
+                                                                `/reports/${n.data.reportId}`,
+                                                            );
                                                             setShowNotif(false);
                                                         }
                                                     }}
                                                 >
-                                                    <p className="text-gray-800">{n.message}</p>
+                                                    <p className="text-gray-800">
+                                                        {n.message}
+                                                    </p>
                                                     <span className="text-xs text-gray-400 mt-1 block">
-                                                        {new Date(n.createdAt).toLocaleString(undefined, { 
-                                                            dateStyle: "short", 
-                                                            timeStyle: "short" 
-                                                        })}
+                                                        {new Date(
+                                                            n.createdAt,
+                                                        ).toLocaleString(
+                                                            undefined,
+                                                            {
+                                                                dateStyle:
+                                                                    "short",
+                                                                timeStyle:
+                                                                    "short",
+                                                            },
+                                                        )}
                                                     </span>
                                                 </div>
                                             ))

@@ -1,4 +1,4 @@
-const prisma = require("../utils/prisma");
+﻿const prisma = require("../utils/prisma");
 
 const create = async (data, userId) => {
     const {
@@ -67,7 +67,17 @@ const getAll = async (filters = {}) => {
                     reputation: true,
                 },
             },
-            media: true,
+            media: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            firstName: true,
+                        }
+                    }
+                }
+            },
             _count: {
                 select: {
                     confirmations: true,
@@ -94,7 +104,17 @@ const getById = async (id) => {
                     reputation: true,
                 },
             },
-            media: true,
+            media: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            firstName: true,
+                        }
+                    }
+                }
+            },
             comments: {
                 include: {
                     user: {
@@ -106,7 +126,17 @@ const getById = async (id) => {
                             avatarUrl: true,
                         },
                     },
-                    media: true,
+                    media: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            firstName: true,
+                        }
+                    }
+                }
+            },
                     likes: {
                         select: { userId: true },
                     },
@@ -162,3 +192,4 @@ const sanitizeUser = (report) => {
 };
 
 module.exports = { create, getAll, getById, createSuggestion };
+

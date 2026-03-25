@@ -1,12 +1,8 @@
-const prisma = require("../utils/prisma");
+﻿const prisma = require("../utils/prisma");
 const path = require("path");
 const fs = require("fs");
 
-const attachToReport = async (
-    reportId,
-    files,
-    { isBefore = false, isAfter = false } = {},
-) => {
+const attachToReport = async (reportId, files, userId, { isBefore = false, isAfter = false } = {}) => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report) throw new Error("Reporte no encontrado");
 
@@ -20,6 +16,7 @@ const attachToReport = async (
                     isBefore,
                     isAfter,
                     reportId,
+                    userId,
                 },
             });
         }),
@@ -28,7 +25,7 @@ const attachToReport = async (
     return media;
 };
 
-const attachToComment = async (commentId, files) => {
+const attachToComment = async (commentId, files, userId) => {
     const comment = await prisma.comment.findUnique({
         where: { id: commentId },
     });
@@ -42,6 +39,7 @@ const attachToComment = async (commentId, files) => {
                     url,
                     type: file.mimetype.startsWith("video") ? "VIDEO" : "PHOTO",
                     commentId,
+                    userId,
                 },
             });
         }),
@@ -58,15 +56,15 @@ const deleteMedia = async (mediaId, userId, userRole) => {
 
     if (!media) throw new Error("Media no encontrada");
 
-    // Solo el dueño del reporte o admin/colaborador puede borrar
+    // Solo el dueÃ±o del reporte o admin/colaborador puede borrar
     const isOwner = media.report.userId === userId;
     const isPrivileged = ["ADMIN", "COLLABORATOR"].includes(userRole);
 
     if (!isOwner && !isPrivileged) {
-        throw new Error("No tenés permisos para eliminar esta media");
+        throw new Error("No tenÃ©s permisos para eliminar esta media");
     }
 
-    // Borrar archivo físico
+    // Borrar archivo fÃ­sico
     const filePath = path.join(
         __dirname,
         "../../uploads",
@@ -80,3 +78,4 @@ const deleteMedia = async (mediaId, userId, userRole) => {
 };
 
 module.exports = { attachToReport, attachToComment, deleteMedia };
+

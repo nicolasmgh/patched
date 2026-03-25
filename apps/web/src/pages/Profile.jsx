@@ -160,7 +160,21 @@ export default function Profile() {
                                                     }))
                                                 }
                                                 className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                placeholder="Apellido" /></div><input type="text" value={form.username} onChange={(e) => setForm(f => ({...f, username: e.target.value}))} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="@usuario (opcional)" />
+                                                placeholder="Apellido"
+                                            />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={form.username}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    username: e.target.value,
+                                                }))
+                                            }
+                                            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                            placeholder="@usuario (opcional)"
+                                        />
                                         <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -182,7 +196,14 @@ export default function Profile() {
                                             {profile?.firstName}{" "}
                                             {profile?.lastName}
                                         </h1>
-                                        <p className="text-sm text-gray-500">{profile?.email}</p>{profile?.username && <p className="text-sm font-medium text-emerald-600">@{profile.username}</p>}
+                                        <p className="text-sm text-gray-500">
+                                            {profile?.email}
+                                        </p>
+                                        {profile?.username && (
+                                            <p className="text-sm font-medium text-emerald-600">
+                                                @{profile.username}
+                                            </p>
+                                        )}
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
                                                 {profile?.role}
@@ -382,7 +403,9 @@ export default function Profile() {
                                     key={n.id}
                                     onClick={() => {
                                         if (n.data?.reportId) {
-                                            navigate(`/reports/${n.data.reportId}`);
+                                            navigate(
+                                                `/reports/${n.data.reportId}`,
+                                            );
                                         }
                                     }}
                                     className={`bg-white rounded-xl border px-4 py-3 text-sm ${n.data?.reportId ? "cursor-pointer hover:border-emerald-300 transition" : ""} ${
@@ -392,7 +415,15 @@ export default function Profile() {
                                     }`}
                                 >
                                     <p>{n.message}</p>
-                                    <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString("es-AR", {dateStyle: "short", timeStyle: "short"})}</p>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        {new Date(n.createdAt).toLocaleString(
+                                            "es-AR",
+                                            {
+                                                dateStyle: "short",
+                                                timeStyle: "short",
+                                            },
+                                        )}
+                                    </p>
                                 </div>
                             ))
                         )}
@@ -441,6 +472,3 @@ export default function Profile() {
         </div>
     );
 }
-
-
-

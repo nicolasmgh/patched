@@ -1,4 +1,4 @@
-const prisma = require("../utils/prisma");
+﻿const prisma = require("../utils/prisma");
 
 const getProfile = async (userId) => {
     const user = await prisma.user.findUnique({
@@ -39,19 +39,27 @@ const getProfile = async (userId) => {
 };
 
 const updateProfile = async (userId, data) => {
-    const allowed = ["firstName", "lastName", "hideLastName", "avatarUrl", "username"];
+    const allowed = [
+        "firstName",
+        "lastName",
+        "hideLastName",
+        "avatarUrl",
+        "username",
+    ];
     const filtered = Object.fromEntries(
         Object.entries(data).filter(([key]) => allowed.includes(key)),
     );
 
-    // Si envían un username, asegurarnos de que sea alfanumérico y único
+    // Si envÃ­an un username, asegurarnos de que sea alfanumÃ©rico y Ãºnico
     if (filtered.username) {
-        filtered.username = filtered.username.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+        filtered.username = filtered.username
+            .replace(/[^a-zA-Z0-9_]/g, "")
+            .toLowerCase();
         const existing = await prisma.user.findUnique({
-            where: { username: filtered.username }
+            where: { username: filtered.username },
         });
         if (existing && existing.id !== userId) {
-            throw new Error("El nombre de usuario ya está en uso");
+            throw new Error("El nombre de usuario ya estÃ¡ en uso");
         }
     }
 
@@ -82,7 +90,7 @@ const markNotificationsRead = async (userId) => {
 
 const getPublicProfile = async (identifier) => {
     const isId = identifier.length === 36;
-    
+
     const user = await prisma.user.findFirst({
         where: isId ? { id: identifier } : { username: identifier },
         select: {
@@ -120,10 +128,31 @@ const getPublicProfile = async (identifier) => {
     return user;
 };
 
+const searchUsers = async (query) => {
+    if (!query || query.length < 1) return [];
+
+    return prisma.user.findMany({
+        where: {
+            OR: [
+                { username: { contains: query, mode: "insensitive" } },
+                { firstName: { contains: query, mode: "insensitive" } },
+            ],
+        },
+        select: {
+            id: true,
+            username: true,
+            firstName: true,
+            avatarUrl: true,
+        },
+        take: 5,
+    });
+};
+
 module.exports = {
     getProfile,
     updateProfile,
     getNotifications,
     markNotificationsRead,
     getPublicProfile,
+    searchUsers,
 };

@@ -256,8 +256,7 @@ export default function Home() {
                                     {(() => {
                                         const filteredMedia =
                                             selectedReport.media.filter(
-                                                (m) =>
-                                                    m.status === "APPROVED"
+                                                (m) => m.status === "APPROVED",
                                             );
                                         return (
                                             filteredMedia.length > 0 && (
