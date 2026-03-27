@@ -71,9 +71,7 @@ const getAll = async (filters = {}) => {
                 include: {
                     user: {
                         select: {
-                            id: true,
-                            username: true,
-                            firstName: true,
+                            id: true, username: true, firstName: true, lastName: true, hideLastName: true, avatarUrl: true,
                         }
                     }
                 }
@@ -108,9 +106,7 @@ const getById = async (id) => {
                 include: {
                     user: {
                         select: {
-                            id: true,
-                            username: true,
-                            firstName: true,
+                            id: true, username: true, firstName: true, lastName: true, hideLastName: true, avatarUrl: true,
                         }
                     }
                 }
@@ -130,9 +126,7 @@ const getById = async (id) => {
                 include: {
                     user: {
                         select: {
-                            id: true,
-                            username: true,
-                            firstName: true,
+                            id: true, username: true, firstName: true, lastName: true, hideLastName: true, avatarUrl: true,
                         }
                     }
                 }

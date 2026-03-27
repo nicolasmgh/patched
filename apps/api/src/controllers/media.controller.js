@@ -11,10 +11,15 @@ const upload = async (req, res) => {
         const { reportId } = req.params;
         const { isBefore, isAfter } = req.body;
 
-        const media = await mediaService.attachToReport(reportId, req.files, req.user.id, {
-            isBefore: isBefore === "true",
-            isAfter: isAfter === "true",
-        });
+        const media = await mediaService.attachToReport(
+            reportId,
+            req.files,
+            req.user.id,
+            {
+                isBefore: isBefore === "true",
+                isAfter: isAfter === "true",
+            },
+        );
 
         res.status(201).json({ ok: true, media });
     } catch (err) {
@@ -31,7 +36,11 @@ const uploadCommentMedia = async (req, res) => {
         }
 
         const { commentId } = req.params;
-        const media = await mediaService.attachToComment(commentId, req.files, req.user.id);
+        const media = await mediaService.attachToComment(
+            commentId,
+            req.files,
+            req.user.id,
+        );
 
         res.status(201).json({ ok: true, media });
     } catch (err) {
@@ -53,4 +62,3 @@ const remove = async (req, res) => {
 };
 
 module.exports = { upload, uploadCommentMedia, remove };
-

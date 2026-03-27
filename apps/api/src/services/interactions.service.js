@@ -66,16 +66,20 @@ const follow = async (reportId, userId) => {
     });
 
     if (report.userId && report.userId !== userId) {
-        const follower = await prisma.user.findUnique({ where: { id: userId } });
+        const follower = await prisma.user.findUnique({
+            where: { id: userId },
+        });
         if (follower) {
-            await prisma.notification.create({
+            const notif = await prisma.notification.create({
                 data: {
                     userId: report.userId,
                     type: "REPORT_FOLLOWED",
-                    message: `@${follower.username || follower.firstName} comenzÃ³ a seguir tu reporte "${report.title}".`,
-                    data: { reportId, followerId: userId }
-                }
+                    message: `@${follower.username || follower.firstName} comenzó a seguir tu reporte "${report.title}".`,
+                    data: { reportId, followerId: userId },
+                },
             });
+            const { emitNotification } = require("../utils/socket");
+            emitNotification(notif);
         }
     }
 
@@ -95,9 +99,12 @@ const unfollow = async (reportId, userId) => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (report && report.userId) {
         const notifs = await prisma.notification.findMany({
-            where: { userId: report.userId, type: "REPORT_FOLLOWED" }
+            where: { userId: report.userId, type: "REPORT_FOLLOWED" },
         });
-        const toDelete = notifs.filter(n => n.data?.reportId === reportId && n.data?.followerId === userId);
+        const toDelete = notifs.filter(
+            (n) =>
+                n.data?.reportId === reportId && n.data?.followerId === userId,
+        );
         for (const n of toDelete) {
             await prisma.notification.delete({ where: { id: n.id } });
         }
@@ -127,14 +134,21 @@ const likeComment = async (commentId, userId) => {
     if (comment.userId && comment.userId !== userId) {
         const liker = await prisma.user.findUnique({ where: { id: userId } });
         if (liker) {
-            await prisma.notification.create({
+            const notif = await prisma.notification.create({
                 data: {
                     userId: comment.userId,
                     type: "COMMENT_LIKED",
                     message: `@${liker.username || liker.firstName} le dio me gusta a tu comentario.`,
-                    data: { reportId: comment.reportId, commentId, likerId: userId }
-                }
+                    data: {
+                        reportId: comment.reportId,
+                        commentId,
+                        likerId: userId,
+                        preview: comment.content.length > 50 ? comment.content.substring(0, 50) + "..." : comment.content
+                    },
+                },
             });
+            const { emitNotification } = require("../utils/socket");
+            emitNotification(notif);
         }
     }
 
@@ -151,12 +165,17 @@ const unlikeComment = async (commentId, userId) => {
         where: { commentId_userId: { commentId, userId } },
     });
 
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+    });
     if (comment && comment.userId) {
         const notifs = await prisma.notification.findMany({
-            where: { userId: comment.userId, type: "COMMENT_LIKED" }
+            where: { userId: comment.userId, type: "COMMENT_LIKED" },
         });
-        const toDelete = notifs.filter(n => n.data?.commentId === commentId && n.data?.likerId === userId);
+        const toDelete = notifs.filter(
+            (n) =>
+                n.data?.commentId === commentId && n.data?.likerId === userId,
+        );
         for (const n of toDelete) {
             await prisma.notification.delete({ where: { id: n.id } });
         }
@@ -173,5 +192,3 @@ module.exports = {
     likeComment,
     unlikeComment,
 };
-
-

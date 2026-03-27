@@ -806,12 +806,6 @@ export default function ReportDetail() {
                                     c.likes?.some((l) => l.userId === user.id);
                                 return (
                                     <div key={c.id} id={`comment-${c.id}`} className="flex gap-3">
-                                        <Link 
-                                            to={user?.id === c.userId ? "/profile" : `/users/${c.user.id}`}
-                                            className="shrink-0 cursor-pointer"
-                                        >
-                                            <UserAvatar user={c.user} className="w-8 h-8" textClass="text-sm" />
-                                        </Link>
                                         <div className="flex-1">
                                             <Link
                                                 to={
@@ -819,17 +813,20 @@ export default function ReportDetail() {
                                                         ? "/profile"
                                                         : `/users/${c.user.id}`
                                                 }
-                                                className="text-sm font-medium text-gray-800 hover:text-emerald-600 transition"
+                                                className="flex items-center gap-2 group cursor-pointer w-fit mb-1"
                                             >
-                                                {c.user.firstName}{" "}
-                                                {c.user.hideLastName
-                                                    ? ""
-                                                    : c.user.lastName}
-                                                {c.user.username && (
-                                                    <span className="text-gray-500 ml-1 font-normal">
-                                                        @{c.user.username}
-                                                    </span>
-                                                )}
+                                                <UserAvatar user={c.user} className="w-8 h-8" textClass="text-sm" />
+                                                <div className="text-sm font-medium text-gray-800 group-hover:text-emerald-600 transition">
+                                                    {c.user.firstName}{" "}
+                                                    {c.user.hideLastName
+                                                        ? ""
+                                                        : c.user.lastName}
+                                                    {c.user.username && (
+                                                        <span className="text-gray-500 ml-1 font-normal">
+                                                            @{c.user.username}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </Link>
                                             <p className="text-sm text-gray-600 whitespace-pre-wrap">
                                                 {parseMentions(c.content)}
@@ -872,14 +869,12 @@ export default function ReportDetail() {
                                                             ❤️{" "}
                                                             {c._count?.likes || 0}
                                                         </button>
-                                                        {c.user?.username && (
-                                                            <button
-                                                                onClick={() => handleReplyPrompt(c.user.username)}
-                                                                className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer"
-                                                            >
-                                                                Responder
-                                                            </button>
-                                                        )}
+                                                        <button
+                                                            onClick={() => handleReplyPrompt(c.user.username || c.user.firstName)}
+                                                            className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer"
+                                                        >
+                                                            Responder
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <span className="text-xs text-gray-300">

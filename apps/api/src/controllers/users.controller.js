@@ -11,7 +11,19 @@ const getMyProfile = async (req, res) => {
 
 const updateMyProfile = async (req, res) => {
     try {
-        const user = await usersService.updateProfile(req.user.id, req.body);
+        const data = { ...req.body };
+        if (req.file) {
+            data.avatarUrl = `/uploads/avatar/${req.file.filename}`;
+        } else if (data.removeAvatar === 'true' || data.removeAvatar === true) {
+            data.avatarUrl = null;
+        }
+
+        // Manejar el parseo de booleanos si viene de FormData
+        if (typeof data.hideLastName === 'string') {
+            data.hideLastName = data.hideLastName === 'true';
+        }
+
+        const user = await usersService.updateProfile(req.user.id, data);
         res.status(200).json({ ok: true, user });
     } catch (err) {
         res.status(400).json({ ok: false, message: err.message });
@@ -30,6 +42,15 @@ const getNotifications = async (req, res) => {
 const markNotificationsRead = async (req, res) => {
     try {
         const result = await usersService.markNotificationsRead(req.user.id);
+        res.status(200).json({ ok: true, ...result });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+};
+
+const markNotificationRead = async (req, res) => {
+    try {
+        const result = await usersService.markNotificationRead(req.user.id, req.params.id);
         res.status(200).json({ ok: true, ...result });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
@@ -59,7 +80,7 @@ module.exports = {
     updateMyProfile,
     getNotifications,
     markNotificationsRead,
+    markNotificationRead,
     getPublicProfile,
     search,
 };
-

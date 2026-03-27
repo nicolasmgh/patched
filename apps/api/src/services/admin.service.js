@@ -1,3 +1,4 @@
+const { getIO } = require("../utils/socket");
 const fs = require("fs");
 const path = require("path");
 const prisma = require("../utils/prisma");
@@ -72,13 +73,24 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
 
     // Notificar al dueño del reporte
     if (report.userId) {
-        await prisma.notification.create({
+        console.log(`[Admin Service] Creando notificación para el userId: ${report.userId}`);
+        const notif = await prisma.notification.create({
             data: {
                 type: "REPORT_STATUS_CHANGED",
                 message: `Tu reporte "${report.title}" cambió de estado a ${status}`,
                 userId: report.userId,
             },
         });
+        
+        const { emitNotification } = require("../utils/socket");
+        emitNotification(notif);
+    }
+
+    try {
+        console.log("Emitiendo evento reportUpdate para el reporte:", updated.id);
+        getIO().emit("reportUpdate", updated); 
+    } catch(e) {
+        console.error("Error al emitir reportUpdate:", e.message);
     }
 
     return updated;
@@ -96,6 +108,8 @@ const modifyReport = async (reportId, data, adminId) => {
         "address",
         "city",
         "province",
+        "latitude",
+        "longitude",
     ];
     const filtered = Object.fromEntries(
         Object.entries(data).filter(([key]) => allowed.includes(key)),
@@ -114,6 +128,13 @@ const modifyReport = async (reportId, data, adminId) => {
             userId: adminId,
         },
     });
+
+    try {
+        console.log("Emitiendo evento reportUpdate para reporte modificado:", updated.id);
+        getIO().emit("reportUpdate", updated);
+    } catch(e) {
+        console.error("Error al emitir reportUpdate:", e.message);
+    }
 
     return updated;
 };
@@ -238,7 +259,7 @@ const toggleUserStatus = async (userId, active, adminId) => {
         data: { active },
     });
 
-    await prisma.notification.create({
+    const notif = await prisma.notification.create({
         data: {
             userId: userId,
             type: active ? "USER_UNBANNED" : "USER_BANNED",
@@ -247,6 +268,9 @@ const toggleUserStatus = async (userId, active, adminId) => {
                 : "Tu cuenta ha sido suspendida por incumplir las normas.",
         },
     });
+    
+    const { emitNotification } = require("../utils/socket");
+    emitNotification(notif);
 
     if (active) {
         // Al desbanear un usuario, se completan (o cancelan) sus apelaciones anteriores
@@ -330,10 +354,19 @@ const getPendingMedia = async () => {
         where: { status: "PENDING" },
         orderBy: { createdAt: "desc" },
         include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
             report: {
                 select: {
                     id: true,
                     title: true,
+                    userId: true,
                     user: {
                         select: {
                             id: true,
@@ -367,6 +400,7 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     const media = await prisma.media.findUnique({
         where: { id: mediaId },
         include: {
+            user: true,
             report: true,
             comment: {
                 include: { report: true },
@@ -376,39 +410,43 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
 
     if (!media) throw new Error("Media no encontrada");
 
-    // Determinar el dueño del medio y el título del reporte
-    const userId = media.report?.userId || media.comment?.userId;
-    const reportTitle =
-        media.report?.title || media.comment?.report?.title || "desconocido";
+    // Determinar el dueño del medio, el dueño del reporte y el título del reporte
+    const uploaderId = media.userId;
+    const reportOwnerId = media.report?.userId || media.comment?.report?.userId;
+    const reportTitle = media.report?.title || media.comment?.report?.title || "desconocido";
     const reportId = media.reportId || media.comment?.reportId;
 
-    if (warnUser && userId) {
+    if (warnUser && uploaderId) {
         const user = await prisma.user.update({
-            where: { id: userId },
+            where: { id: uploaderId },
             data: { warnings: { increment: 1 } },
         });
 
-        await prisma.notification.create({
+        const notif = await prisma.notification.create({
             data: {
-                userId: userId,
+                userId: uploaderId,
                 type: "USER_WARNED",
                 message:
                     "Has sido advertido por subir contenido inapropiado. Acumular advertencias puede resultar en la suspensión de tu cuenta.",
                 data: reportId ? { reportId } : null,
             },
         });
+        const { emitNotification } = require("../utils/socket");
+        emitNotification(notif);
     }
 
     if (status === "REJECTED") {
-        if (userId) {
-            await prisma.notification.create({
+        if (uploaderId) {
+            const notif = await prisma.notification.create({
                 data: {
-                    userId: userId,
+                    userId: uploaderId,
                     type: "MEDIA_REJECTED",
                     message: `Una imagen o video que subiste en el reporte "${reportTitle}" fue rechazado y eliminado por no cumplir con nuestras normas.`,
                     data: reportId ? { reportId } : null,
                 },
             });
+            const { emitNotification } = require("../utils/socket");
+            emitNotification(notif);
         }
 
         // Eliminar también el archivo físico del servidor
@@ -430,7 +468,7 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     }
 
     if (status === "APPROVED") {
-        if (userId) {
+        if (uploaderId) {
             let increment = 0;
             if (media.type === "PHOTO") {
                 increment = media.commentId ? 6 : 5;
@@ -440,19 +478,36 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
 
             if (increment > 0) {
                 await prisma.user.update({
-                    where: { id: userId },
+                    where: { id: uploaderId },
                     data: { reputation: { increment } },
                 });
             }
 
-            await prisma.notification.create({
+            const notif = await prisma.notification.create({
                 data: {
-                    userId: userId,
+                    userId: uploaderId,
                     type: "MEDIA_ACCEPTED",
                     message: `¡Tu archivo multimedia en el reporte "${reportTitle}" ha sido aprobado y ahora es visible!`,
                     data: reportId ? { reportId } : null,
                 },
             });
+            const { emitNotification } = require("../utils/socket");
+            emitNotification(notif);
+        }
+
+        // Notificar al dueño del reporte que alguien más subió una foto a su reporte
+        if (reportOwnerId && reportOwnerId !== uploaderId) {
+            const uploaderName = media.user?.firstName || "Alguien";
+            const notif = await prisma.notification.create({
+                data: {
+                    userId: reportOwnerId,
+                    type: "COMMENT_ON_REPORT", // or a new type if preferred, but this works well for generic "someone interacted"
+                    message: `${uploaderName} ha subido una foto a tu reporte "${reportTitle}".`,
+                    data: reportId ? { reportId } : null,
+                },
+            });
+            const { emitNotification } = require("../utils/socket");
+            emitNotification(notif);
         }
     }
 

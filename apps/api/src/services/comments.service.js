@@ -1,3 +1,4 @@
+const { getIO } = require("../utils/socket");
 const prisma = require("../utils/prisma");
 
 const create = async (reportId, userId, { content }) => {
@@ -34,15 +35,23 @@ const create = async (reportId, userId, { content }) => {
         });
 
         await Promise.all(
-            usersToNotify.map((u) => {
+            usersToNotify.map(async (u) => {
                 if (u.id !== userId) {
-                    return prisma.notification.create({
+                    const notif = await prisma.notification.create({
                         data: {
                             userId: u.id,
                             type: "USER_MENTIONED",
                             message: `Has sido mencionado en un comentario del reporte "${report.title}".`,
+                            data: {
+                                reportId,
+                                commentId: comment.id,
+                                preview: content.length > 50 ? content.substring(0, 50) + "..." : content
+                            }
                         },
                     });
+                    const { emitNotification } = require("../utils/socket");
+                    emitNotification(notif);
+                    return notif;
                 }
             }),
         );
@@ -63,6 +72,13 @@ const create = async (reportId, userId, { content }) => {
     });
 
     if (comment.user.hideLastName) comment.user.lastName = null;
+
+    try {
+        console.log("Emitiendo evento commentAdded para reporte:", reportId);
+        getIO().emit("commentAdded", comment);
+    } catch(e) {
+        console.error("Error al emitir commentAdded:", e.message);
+    }
 
     return comment;
 };

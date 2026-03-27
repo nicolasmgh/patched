@@ -15,12 +15,23 @@ const register = async ({
 
     const hashed = await bcrypt.hash(password, 10);
 
+    let baseUsername = (firstName + (lastName || ""))
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+    let username = baseUsername;
+    let c = 1;
+    while (await prisma.user.findUnique({ where: { username } })) {
+        username = baseUsername + c;
+        c++;
+    }
+
     const user = await prisma.user.create({
         data: {
             email,
             password: hashed,
             firstName,
             lastName,
+            username,
             city: city || null,
             province: province || null,
         },

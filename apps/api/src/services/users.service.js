@@ -85,6 +85,14 @@ const markNotificationsRead = async (userId) => {
         where: { userId, read: false },
         data: { read: true },
     });
+    
+    try {
+        const { getIO } = require("../utils/socket");
+        getIO().emit("notificationsRead", { userId });
+    } catch (e) {
+        console.error("Socket emit notificationsRead error:", e.message);
+    }
+    
     return { updated: true };
 };
 
