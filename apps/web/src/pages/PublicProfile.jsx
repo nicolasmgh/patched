@@ -91,7 +91,11 @@ export default function PublicProfile() {
                 {/* Header */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
                     <div className="flex items-center gap-4">
-                        <UserAvatar user={profile} className="w-16 h-16" textClass="text-2xl" />
+                        <UserAvatar
+                            user={profile}
+                            className="w-16 h-16"
+                            textClass="text-2xl"
+                        />
                         <div>
                             <h1 className="text-xl font-bold text-gray-900">
                                 {profile.firstName}{" "}

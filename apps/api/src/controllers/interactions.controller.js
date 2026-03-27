@@ -48,25 +48,20 @@ const unfollow = async (req, res) => {
     }
 };
 
-const likeComment = async (req, res) => {
+const voteComment = async (req, res) => {
     try {
-        const result = await interactionsService.likeComment(
+        const { value } = req.body;
+        if (![1, -1, 0].includes(value)) {
+            return res
+                .status(400)
+                .json({ ok: false, message: "Invalid vote value" });
+        }
+        const result = await interactionsService.voteComment(
             req.params.commentId,
             req.user.id,
+            value,
         );
-        res.status(201).json({ ok: true, like: result });
-    } catch (err) {
-        res.status(400).json({ ok: false, message: err.message });
-    }
-};
-
-const unlikeComment = async (req, res) => {
-    try {
-        const result = await interactionsService.unlikeComment(
-            req.params.commentId,
-            req.user.id,
-        );
-        res.status(200).json({ ok: true, ...result });
+        res.status(200).json({ ok: true, result });
     } catch (err) {
         res.status(400).json({ ok: false, message: err.message });
     }
@@ -77,6 +72,5 @@ module.exports = {
     unconfirm,
     follow,
     unfollow,
-    likeComment,
-    unlikeComment,
+    voteComment,
 };

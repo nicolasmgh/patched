@@ -111,7 +111,7 @@ model User {
   reportSuggestions   ReportSuggestion[]
   confirmations       Confirmation[]
   comments            Comment[]
-  commentLikes        CommentLike[]
+  commentVotes        CommentVote[]
   follows             Follow[]
   badges              UserBadge[]
   notifications       Notification[]
@@ -211,7 +211,7 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  likes CommentLike[]
+  votes CommentVote[]
 }
 
 model Follow {
@@ -268,12 +268,13 @@ model Notification {
   createdAt DateTime         @default(now())
 }
 
-model CommentLike {
+model CommentVote {
   id        String   @id @default(uuid())
   commentId String
   comment   Comment  @relation(fields: [commentId], references: [id])
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  value     Int      @default(1)
   createdAt DateTime @default(now())
 
   @@unique([commentId, userId])

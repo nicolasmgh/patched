@@ -73,7 +73,9 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
 
     // Notificar al dueño del reporte
     if (report.userId) {
-        console.log(`[Admin Service] Creando notificación para el userId: ${report.userId}`);
+        console.log(
+            `[Admin Service] Creando notificación para el userId: ${report.userId}`,
+        );
         const notif = await prisma.notification.create({
             data: {
                 type: "REPORT_STATUS_CHANGED",
@@ -81,15 +83,18 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
                 userId: report.userId,
             },
         });
-        
+
         const { emitNotification } = require("../utils/socket");
         emitNotification(notif);
     }
 
     try {
-        console.log("Emitiendo evento reportUpdate para el reporte:", updated.id);
-        getIO().emit("reportUpdate", updated); 
-    } catch(e) {
+        console.log(
+            "Emitiendo evento reportUpdate para el reporte:",
+            updated.id,
+        );
+        getIO().emit("reportUpdate", updated);
+    } catch (e) {
         console.error("Error al emitir reportUpdate:", e.message);
     }
 
@@ -130,9 +135,12 @@ const modifyReport = async (reportId, data, adminId) => {
     });
 
     try {
-        console.log("Emitiendo evento reportUpdate para reporte modificado:", updated.id);
+        console.log(
+            "Emitiendo evento reportUpdate para reporte modificado:",
+            updated.id,
+        );
         getIO().emit("reportUpdate", updated);
-    } catch(e) {
+    } catch (e) {
         console.error("Error al emitir reportUpdate:", e.message);
     }
 
@@ -268,7 +276,7 @@ const toggleUserStatus = async (userId, active, adminId) => {
                 : "Tu cuenta ha sido suspendida por incumplir las normas.",
         },
     });
-    
+
     const { emitNotification } = require("../utils/socket");
     emitNotification(notif);
 
@@ -413,7 +421,8 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     // Determinar el dueño del medio, el dueño del reporte y el título del reporte
     const uploaderId = media.userId;
     const reportOwnerId = media.report?.userId || media.comment?.report?.userId;
-    const reportTitle = media.report?.title || media.comment?.report?.title || "desconocido";
+    const reportTitle =
+        media.report?.title || media.comment?.report?.title || "desconocido";
     const reportId = media.reportId || media.comment?.reportId;
 
     if (warnUser && uploaderId) {

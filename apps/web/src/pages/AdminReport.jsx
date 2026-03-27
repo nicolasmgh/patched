@@ -281,7 +281,10 @@ export default function AdminReport() {
                                     key={c.id}
                                     className={`flex gap-3 p-3 rounded-xl ${c.flagged ? "bg-red-50 border border-red-100" : "bg-gray-50"}`}
                                 >
-                                    <UserAvatar user={c.user} className="w-7 h-7 text-xs" />
+                                    <UserAvatar
+                                        user={c.user}
+                                        className="w-7 h-7 text-xs"
+                                    />
                                     <div className="flex-1">
                                         <p className="text-xs font-medium text-gray-700">
                                             {c.user?.firstName}{" "}

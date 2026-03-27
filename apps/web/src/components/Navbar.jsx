@@ -17,20 +17,35 @@ export default function Navbar() {
             fetchNotifications();
 
             const handleNewNotification = (data) => {
-                console.log("🔔 EVENTO RECIBIDO EN NAVBAR: newNotification", data);
+                console.log(
+                    "🔔 EVENTO RECIBIDO EN NAVBAR: newNotification",
+                    data,
+                );
                 if (data.userId === user.id) {
-                    console.log("🔔 Coincide el usuario. Actualizando notificaciones...");
+                    console.log(
+                        "🔔 Coincide el usuario. Actualizando notificaciones...",
+                    );
                     setNotifications((prev) => [data, ...prev]);
                     setHasSeenNotifs(false);
                 } else {
-                    console.log("🔔 No es para este usuario. Yo soy", user.id, "y es para", data.userId);
+                    console.log(
+                        "🔔 No es para este usuario. Yo soy",
+                        user.id,
+                        "y es para",
+                        data.userId,
+                    );
                 }
             };
-            
+
             const handleNotificationsRead = (data) => {
-                console.log("🔔 EVENTO RECIBIDO EN NAVBAR: notificationsRead", data);
+                console.log(
+                    "🔔 EVENTO RECIBIDO EN NAVBAR: notificationsRead",
+                    data,
+                );
                 if (data.userId === user.id) {
-                    setNotifications((n) => n.map((x) => ({ ...x, read: true })));
+                    setNotifications((n) =>
+                        n.map((x) => ({ ...x, read: true })),
+                    );
                 }
             };
 
@@ -76,12 +91,14 @@ export default function Navbar() {
         if (!n.read) {
             try {
                 await api.patch(`/users/me/notifications/${n.id}/read`);
-                setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                setNotifications((prev) =>
+                    prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)),
+                );
             } catch (err) {
                 console.error("Error marking notification as read:", err);
             }
         }
-        
+
         if (n.data?.reportId) {
             let hash = "";
             if (n.data?.commentId) hash = `#comment-${n.data.commentId}`;
@@ -163,7 +180,11 @@ export default function Navbar() {
                                                             ? "bg-white"
                                                             : "bg-emerald-50/50"
                                                     }`}
-                                                    onClick={() => handleNotificationClick(n)}
+                                                    onClick={() =>
+                                                        handleNotificationClick(
+                                                            n,
+                                                        )
+                                                    }
                                                 >
                                                     <p className="text-gray-800">
                                                         {n.message}

@@ -570,7 +570,7 @@ export default function Home() {
                                     className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
                                 />
                             )}
-                            
+
                             {/* Contador de imágenes */}
                             {lightboxMedia.length > 1 && (
                                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
@@ -591,11 +591,11 @@ export default function Home() {
                             </button>
                         )}
                     </div>
-                    
+
                     {/* Footer con info del uploader estilo Komoot */}
                     {lightboxMedia[lightboxIndex].user && (
                         <div className="w-full shrink-0 h-24 flex items-center justify-center pb-6">
-                            <Link 
+                            <Link
                                 to={`/users/${lightboxMedia[lightboxIndex].user.id}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -603,19 +603,36 @@ export default function Home() {
                                 }}
                                 className="flex items-center gap-3 hover:bg-white/5 p-2 rounded-xl transition cursor-pointer"
                             >
-                                <UserAvatar user={lightboxMedia[lightboxIndex].user} className="w-10 h-10 border border-gray-600" textClass="text-lg" fallbackBg="bg-emerald-600" fallbackText="text-white" />
+                                <UserAvatar
+                                    user={lightboxMedia[lightboxIndex].user}
+                                    className="w-10 h-10 border border-gray-600"
+                                    textClass="text-lg"
+                                    fallbackBg="bg-emerald-600"
+                                    fallbackText="text-white"
+                                />
                                 <div className="flex flex-col text-left">
                                     <span className="text-gray-300 text-sm">
                                         Foto por{" "}
                                         <span className="text-emerald-500 font-medium hover:underline transition">
-                                            {lightboxMedia[lightboxIndex].user.firstName} {lightboxMedia[lightboxIndex].user.hideLastName ? "" : lightboxMedia[lightboxIndex].user.lastName}
+                                            {
+                                                lightboxMedia[lightboxIndex]
+                                                    .user.firstName
+                                            }{" "}
+                                            {lightboxMedia[lightboxIndex].user
+                                                .hideLastName
+                                                ? ""
+                                                : lightboxMedia[lightboxIndex]
+                                                      .user.lastName}
                                         </span>
                                     </span>
                                     <span className="text-gray-500 text-xs mt-0.5">
-                                        {new Date(lightboxMedia[lightboxIndex].createdAt || Date.now()).toLocaleDateString("es-AR", {
+                                        {new Date(
+                                            lightboxMedia[lightboxIndex]
+                                                .createdAt || Date.now(),
+                                        ).toLocaleDateString("es-AR", {
                                             day: "numeric",
                                             month: "short",
-                                            year: "numeric"
+                                            year: "numeric",
                                         })}
                                     </span>
                                 </div>

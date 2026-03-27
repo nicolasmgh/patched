@@ -720,11 +720,16 @@ export default function Admin() {
                                                     <p className="text-xs text-gray-400 mt-0.5">
                                                         Subido por{" "}
                                                         <span className="font-semibold text-gray-600">
-                                                            {m.user?.firstName} {m.user?.lastName}
+                                                            {m.user?.firstName}{" "}
+                                                            {m.user?.lastName}
                                                         </span>
                                                     </p>
                                                     <p className="text-xs text-gray-400">
-                                                        en reporte de {m.report?.user?.firstName}
+                                                        en reporte de{" "}
+                                                        {
+                                                            m.report?.user
+                                                                ?.firstName
+                                                        }
                                                     </p>
                                                 </div>
                                             )}

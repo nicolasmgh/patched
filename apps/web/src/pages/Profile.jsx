@@ -60,6 +60,18 @@ export default function Profile() {
         }
     }, [authLoading, user, navigate]);
 
+    const handleVote = async (e, commentId, cVotes, voteIntent) => {
+        e.preventDefault();
+        try {
+            const currentVoteValue = cVotes.find(v => v.userId === user?.id)?.value || 0;
+            const newValue = currentVoteValue === voteIntent ? 0 : voteIntent;
+            await api.post(`/interactions/vote/${commentId}`, { value: newValue });
+            fetchProfile();
+        } catch (err) {
+            alert(err.response?.data?.message || "Error al votar");
+        }
+    };
+
     const fetchProfile = async () => {
         try {
             const res = await api.get("/users/me");
@@ -94,7 +106,7 @@ export default function Profile() {
             formData.append("lastName", form.lastName);
             formData.append("hideLastName", form.hideLastName);
             formData.append("username", form.username);
-            
+
             if (form.avatarFile) {
                 formData.append("avatar", form.avatarFile);
             }
@@ -105,12 +117,16 @@ export default function Profile() {
             const res = await api.patch("/users/me", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                }
+                },
             });
             setProfile((p) => ({ ...p, ...res.data.user }));
             login(res.data.user, localStorage.getItem("token"));
             setEditing(false);
-            setForm(prev => ({ ...prev, avatarFile: null, avatarPreview: null }));
+            setForm((prev) => ({
+                ...prev,
+                avatarFile: null,
+                avatarPreview: null,
+            }));
         } catch (err) {
             alert(err.response?.data?.message || "Error al guardar");
         } finally {
@@ -150,21 +166,28 @@ export default function Profile() {
                     <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">
                             <div className="flex flex-col items-center gap-2">
-                                <div 
-                                    className={`relative ${editing ? 'cursor-pointer group' : ''}`}
-                                    onClick={() => editing && fileInputRef.current?.click()}
+                                <div
+                                    className={`relative ${editing ? "cursor-pointer group" : ""}`}
+                                    onClick={() =>
+                                        editing && fileInputRef.current?.click()
+                                    }
                                 >
-                                    <UserAvatar 
+                                    <UserAvatar
                                         user={{
                                             ...profile,
-                                            avatarUrl: form.removeAvatar ? null : (form.avatarPreview || profile?.avatarUrl)
-                                        }} 
-                                        className="w-16 h-16" 
-                                        textClass="text-2xl" 
+                                            avatarUrl: form.removeAvatar
+                                                ? null
+                                                : form.avatarPreview ||
+                                                  profile?.avatarUrl,
+                                        }}
+                                        className="w-16 h-16"
+                                        textClass="text-2xl"
                                     />
                                     {editing && (
                                         <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <span className="text-white text-xs font-semibold">Cambiar</span>
+                                            <span className="text-white text-xs font-semibold">
+                                                Cambiar
+                                            </span>
                                         </div>
                                     )}
                                     <input
@@ -175,20 +198,36 @@ export default function Profile() {
                                         onChange={(e) => {
                                             const file = e.target.files[0];
                                             if (file) {
-                                                const previewUrl = URL.createObjectURL(file);
-                                                setForm(f => ({ ...f, avatarFile: file, avatarPreview: previewUrl, removeAvatar: false }));
+                                                const previewUrl =
+                                                    URL.createObjectURL(file);
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    avatarFile: file,
+                                                    avatarPreview: previewUrl,
+                                                    removeAvatar: false,
+                                                }));
                                             }
                                         }}
                                     />
                                 </div>
-                                {editing && (profile?.avatarUrl || form.avatarPreview) && !form.removeAvatar && (
-                                    <button 
-                                        onClick={() => setForm(f => ({ ...f, removeAvatar: true, avatarFile: null, avatarPreview: null }))}
-                                        className="text-xs text-red-500 hover:text-red-700 font-medium"
-                                    >
-                                        Eliminar foto
-                                    </button>
-                                )}
+                                {editing &&
+                                    (profile?.avatarUrl ||
+                                        form.avatarPreview) &&
+                                    !form.removeAvatar && (
+                                        <button
+                                            onClick={() =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    removeAvatar: true,
+                                                    avatarFile: null,
+                                                    avatarPreview: null,
+                                                }))
+                                            }
+                                            className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                        >
+                                            Eliminar foto
+                                        </button>
+                                    )}
                             </div>
                             <div>
                                 {editing ? (
@@ -420,28 +459,35 @@ export default function Profile() {
                                 </p>
                             </div>
                         ) : (
-                            profile?.comments?.map((c) => (
-                                <Link
+                            profile?.comments?.map((c) => {
+                                const userVote = c.votes?.find(v => v.userId === user?.id)?.value || 0;
+                                const voteScore = c.votes?.reduce((acc, v) => acc + v.value, 0) || 0;
+                                return (
+                                <div
                                     key={c.id}
-                                    to={`/reports/${c.report.id}`}
-                                    className="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 transition"
+                                    className="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 transition flex gap-3"
                                 >
-                                    <p className="text-xs text-gray-400 mb-1">
-                                        En: {c.report.title}
-                                    </p>
-                                    <p className="text-sm text-gray-700">
-                                        {c.content}
-                                    </p>
-                                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                                        <span>❤️ {c._count.likes} likes</span>
-                                        <span>
-                                            {new Date(
-                                                c.createdAt,
-                                            ).toLocaleDateString("es-AR")}
-                                        </span>
+                                    <div className="flex flex-col items-center gap-1 mt-1">
+                                        <button onClick={(e) => handleVote(e, c.id, c.votes || [], 1)} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === 1 ? "text-emerald-500 font-bold" : "text-gray-400 hover:text-emerald-500")} >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                                        </button>
+                                        <span className={"text-xs font-semibold " + (voteScore > 0 ? "text-emerald-600" : voteScore < 0 ? "text-red-500" : "text-gray-500")}>{voteScore}</span>
+                                        <button onClick={(e) => handleVote(e, c.id, c.votes || [], -1)} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === -1 ? "text-red-500 font-bold" : "text-gray-400 hover:text-red-500")} >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"/></svg>
+                                        </button>
                                     </div>
-                                </Link>
-                            ))
+                                    <div className="flex-1">
+                                        <Link to={`/reports/${c.report.id}`} className="block">
+                                            <div className="text-xs text-gray-500 mb-2 flex items-center gap-2">
+                                                <span className="font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">Reporte • {c.report.title}</span>
+                                                <span>•</span>
+                                                <span>{new Date(c.createdAt).toLocaleDateString("es-AR")}</span>
+                                            </div>
+                                            <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.content}</p>
+                                        </Link>
+                                    </div>
+                                </div>
+                            )})
                         )}
                     </div>
                 )}

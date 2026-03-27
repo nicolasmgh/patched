@@ -131,10 +131,10 @@ const getById = async (id) => {
                     }
                 }
             },
-                    likes: {
-                        select: { userId: true },
+                    votes: {
+                        select: { userId: true, value: true },
                     },
-                    _count: { select: { likes: true } },
+                    _count: { select: { votes: true } },
                 },
                 orderBy: { createdAt: "asc" },
             },

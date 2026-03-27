@@ -112,76 +112,64 @@ const unfollow = async (reportId, userId) => {
     return { unfollowed: true };
 };
 
-// â”€â”€â”€ LIKES DE COMENTARIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── VOTOS DE COMENTARIOS ──────────────────────────────────────────────────
 
-const likeComment = async (commentId, userId) => {
+const voteComment = async (commentId, userId, value) => {
     const comment = await prisma.comment.findUnique({
         where: { id: commentId },
     });
     if (!comment) throw new Error("Comentario no encontrado");
-    if (comment.userId === userId)
-        throw new Error("No podÃ©s likear tu propio comentario");
 
-    const existing = await prisma.commentLike.findUnique({
-        where: { commentId_userId: { commentId, userId } },
-    });
-    if (existing) throw new Error("Ya likeaste este comentario");
-
-    const like = await prisma.commentLike.create({
-        data: { commentId, userId },
-    });
-
-    if (comment.userId && comment.userId !== userId) {
-        const liker = await prisma.user.findUnique({ where: { id: userId } });
-        if (liker) {
-            const notif = await prisma.notification.create({
-                data: {
-                    userId: comment.userId,
-                    type: "COMMENT_LIKED",
-                    message: `@${liker.username || liker.firstName} le dio me gusta a tu comentario.`,
-                    data: {
-                        reportId: comment.reportId,
-                        commentId,
-                        likerId: userId,
-                        preview: comment.content.length > 50 ? comment.content.substring(0, 50) + "..." : comment.content
-                    },
-                },
-            });
-            const { emitNotification } = require("../utils/socket");
-            emitNotification(notif);
-        }
-    }
-
-    return like;
-};
-
-const unlikeComment = async (commentId, userId) => {
-    const existing = await prisma.commentLike.findUnique({
-        where: { commentId_userId: { commentId, userId } },
-    });
-    if (!existing) throw new Error("No habÃ­as likeado este comentario");
-
-    await prisma.commentLike.delete({
-        where: { commentId_userId: { commentId, userId } },
-    });
-
-    const comment = await prisma.comment.findUnique({
-        where: { id: commentId },
-    });
-    if (comment && comment.userId) {
-        const notifs = await prisma.notification.findMany({
-            where: { userId: comment.userId, type: "COMMENT_LIKED" },
+    if (value === 0) {
+        const existing = await prisma.commentVote.findUnique({
+            where: { commentId_userId: { commentId, userId } },
         });
-        const toDelete = notifs.filter(
-            (n) =>
-                n.data?.commentId === commentId && n.data?.likerId === userId,
-        );
-        for (const n of toDelete) {
-            await prisma.notification.delete({ where: { id: n.id } });
+        if (existing) {
+            await prisma.commentVote.delete({
+                where: { commentId_userId: { commentId, userId } },
+            });
+        }
+        return { deleted: true };
+    }
+
+    const existing = await prisma.commentVote.findUnique({
+        where: { commentId_userId: { commentId, userId } },
+    });
+    
+    let vote;
+    if (existing) {
+        vote = await prisma.commentVote.update({
+            where: { commentId_userId: { commentId, userId } },
+            data: { value },
+        });
+    } else {
+        vote = await prisma.commentVote.create({
+            data: { commentId, userId, value },
+        });
+
+        if (value === 1 && comment.userId && comment.userId !== userId) {
+            const liker = await prisma.user.findUnique({ where: { id: userId } });
+            if (liker) {
+                const notif = await prisma.notification.create({
+                    data: {
+                        userId: comment.userId,
+                        type: "COMMENT_LIKED",
+                        message: `@${liker.username || liker.firstName} le dio un upvote a tu comentario.`,
+                        data: {
+                            reportId: comment.reportId,
+                            commentId,
+                            likerId: userId,
+                            preview: comment.content.length > 50 ? comment.content.substring(0, 50) + "..." : comment.content
+                        },
+                    },
+                });
+                const { emitNotification } = require("../utils/socket");
+                emitNotification(notif);
+            }
         }
     }
 
-    return { unliked: true };
+    return vote;
 };
 
 module.exports = {
@@ -189,6 +177,5 @@ module.exports = {
     unconfirm,
     follow,
     unfollow,
-    likeComment,
-    unlikeComment,
+    voteComment,
 };
