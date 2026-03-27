@@ -286,9 +286,29 @@ export default function NewReport() {
                                 className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                             />
                             {files.length > 0 && (
-                                <p className="text-xs text-gray-400 mt-1">
-                                    {files.length} archivo(s) seleccionado(s)
-                                </p>
+                                <div className="flex gap-2 items-center flex-wrap mt-2">
+                                    {files.map((file, idx) => {
+                                        const isVideo = file.type.startsWith('video/');
+                                        const url = URL.createObjectURL(file);
+                                        return (
+                                            <div key={idx} className="relative w-16 h-16 rounded-md overflow-hidden bg-gray-900 border border-gray-200">
+                                                {isVideo ? (
+                                                    <video src={url} className="w-full h-full object-cover opacity-50" />
+                                                ) : (
+                                                    <img src={url} className="w-full h-full object-cover" alt="preview" />
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer hover:bg-red-600"
+                                                    title="Eliminar"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
 

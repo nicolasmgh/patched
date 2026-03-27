@@ -71,10 +71,15 @@ const getAll = async (filters = {}) => {
                 include: {
                     user: {
                         select: {
-                            id: true, username: true, firstName: true, lastName: true, hideLastName: true, avatarUrl: true,
-                        }
-                    }
-                }
+                            id: true,
+                            username: true,
+                            firstName: true,
+                            lastName: true,
+                            hideLastName: true,
+                            avatarUrl: true,
+                        },
+                    },
+                },
             },
             _count: {
                 select: {
@@ -106,10 +111,15 @@ const getById = async (id) => {
                 include: {
                     user: {
                         select: {
-                            id: true, username: true, firstName: true, lastName: true, hideLastName: true, avatarUrl: true,
-                        }
-                    }
-                }
+                            id: true,
+                            username: true,
+                            firstName: true,
+                            lastName: true,
+                            hideLastName: true,
+                            avatarUrl: true,
+                        },
+                    },
+                },
             },
             comments: {
                 include: {
@@ -123,14 +133,19 @@ const getById = async (id) => {
                         },
                     },
                     media: {
-                include: {
-                    user: {
-                        select: {
-                            id: true, username: true, firstName: true, lastName: true, hideLastName: true, avatarUrl: true,
-                        }
-                    }
-                }
-            },
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                    firstName: true,
+                                    lastName: true,
+                                    hideLastName: true,
+                                    avatarUrl: true,
+                                },
+                            },
+                        },
+                    },
                     votes: {
                         select: { userId: true, value: true },
                     },
@@ -186,4 +201,3 @@ const sanitizeUser = (report) => {
 };
 
 module.exports = { create, getAll, getById, createSuggestion };
-

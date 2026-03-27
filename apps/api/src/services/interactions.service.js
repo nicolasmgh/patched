@@ -135,7 +135,7 @@ const voteComment = async (commentId, userId, value) => {
     const existing = await prisma.commentVote.findUnique({
         where: { commentId_userId: { commentId, userId } },
     });
-    
+
     let vote;
     if (existing) {
         vote = await prisma.commentVote.update({
@@ -148,7 +148,9 @@ const voteComment = async (commentId, userId, value) => {
         });
 
         if (value === 1 && comment.userId && comment.userId !== userId) {
-            const liker = await prisma.user.findUnique({ where: { id: userId } });
+            const liker = await prisma.user.findUnique({
+                where: { id: userId },
+            });
             if (liker) {
                 const notif = await prisma.notification.create({
                     data: {
@@ -159,7 +161,10 @@ const voteComment = async (commentId, userId, value) => {
                             reportId: comment.reportId,
                             commentId,
                             likerId: userId,
-                            preview: comment.content.length > 50 ? comment.content.substring(0, 50) + "..." : comment.content
+                            preview:
+                                comment.content.length > 50
+                                    ? comment.content.substring(0, 50) + "..."
+                                    : comment.content,
                         },
                     },
                 });

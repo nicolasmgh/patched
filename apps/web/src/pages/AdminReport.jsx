@@ -56,6 +56,11 @@ export default function AdminReport() {
     };
 
     const handleStatusChange = async (status) => {
+        if (status === "REJECTED" && !details.trim()) {
+            alert("Debes ingresar un motivo de justificación para rechazar el reporte.");
+            return;
+        }
+
         if (!window.confirm(`¿Cambiar estado a "${STATUS_LABELS[status]}"?`))
             return;
         setSubmitting(true);
@@ -238,7 +243,7 @@ export default function AdminReport() {
                         <textarea
                             value={details}
                             onChange={(e) => setDetails(e.target.value)}
-                            placeholder="Notas sobre el cambio de estado (opcional)..."
+                            placeholder="Motivo o notas (obligatorio para rechazar, opcional para otros estados)..."
                             rows={2}
                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none mb-3"
                         />

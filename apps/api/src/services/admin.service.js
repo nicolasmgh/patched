@@ -76,11 +76,20 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
         console.log(
             `[Admin Service] Creando notificación para el userId: ${report.userId}`,
         );
+        let message = `Tu reporte "${report.title}" cambió de estado a ${status}.`;
+        if (status === "REJECTED" && details) {
+            message += ` Motivo: ${details}`;
+        }
+        
         const notif = await prisma.notification.create({
             data: {
                 type: "REPORT_STATUS_CHANGED",
-                message: `Tu reporte "${report.title}" cambió de estado a ${status}`,
+                message,
                 userId: report.userId,
+                data: {
+                    reportId,
+                    status
+                }
             },
         });
 

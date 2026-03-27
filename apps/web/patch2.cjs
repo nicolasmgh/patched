@@ -1,13 +1,15 @@
-const fs = require('fs');
-let code = fs.readFileSync('src/pages/ReportDetail.jsx', 'utf8');
+const fs = require("fs");
+let code = fs.readFileSync("src/pages/ReportDetail.jsx", "utf8");
 
-const r1 = /const liked =\s*user &&\s*c\.likes\?\.some\(\(l\) => l\.userId === user\.id\);/g;
+const r1 =
+    /const liked =\s*user &&\s*c\.likes\?\.some\(\(l\) => l\.userId === user\.id\);/g;
 const newR1 = `const userVote = user ? (c.votes?.find(v => v.userId === user.id)?.value || 0) : 0;
                                 const voteScore = c.votes?.reduce((acc, v) => acc + v.value, 0) || 0;`;
 
 code = code.replace(r1, newR1);
 
-const r2 = /<button\s*onClick={async \(\) => {[\s\S]*?interactions\/like\/[\s\S]*?<\/button>/;
+const r2 =
+    /<button\s*onClick={async \(\) => {[\s\S]*?interactions\/like\/[\s\S]*?<\/button>/;
 
 const newB1 = `
 <>
@@ -38,5 +40,5 @@ const newB1 = `
 `;
 
 code = code.replace(r2, newB1);
-fs.writeFileSync('src/pages/ReportDetail.jsx', code);
-console.log('Fixed ReportDetail.jsx successfully!');
+fs.writeFileSync("src/pages/ReportDetail.jsx", code);
+console.log("Fixed ReportDetail.jsx successfully!");

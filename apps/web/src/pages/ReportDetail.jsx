@@ -892,48 +892,27 @@ export default function ReportDetail() {
                                                         timeStyle: "short",
                                                     })}
                                                 </p>
-                                                {user ? (
-                                                    <div className="flex items-center gap-3">
-
-<>
-<button onClick={async () => {
-    try {
-        await api.post(`/interactions/vote/${c.id}`, { value: userVote === 1 ? 0 : 1 });
-        fetchReport();
-    } catch(err) { alert(err.response?.data?.message || "Error al votar"); }
-}} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === 1 ? "text-emerald-500 font-bold" : "text-gray-400 hover:text-emerald-500")}>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path fillRule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/>
-    </svg>
-</button>
-<span className={"text-xs font-semibold " + (voteScore > 0 ? "text-emerald-600" : voteScore < 0 ? "text-red-500" : "text-gray-500")}>
-    {voteScore}
-</span>
-<button onClick={async () => {
-    try {
-        await api.post(`/interactions/vote/${c.id}`, { value: userVote === -1 ? 0 : -1 });
-        fetchReport();
-    } catch(err) { alert(err.response?.data?.message || "Error al votar"); }
-}} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === -1 ? "text-red-500 font-bold" : "text-gray-400 hover:text-red-500")}>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path fillRule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"/>
-    </svg>
-</button>
-</>
-
-                                                        <button
-                                                            onClick={() => handleReplyPrompt(c.user.username || c.user.firstName)}
-                                                            className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer"
-                                                        >
-                                                            Responder
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-gray-300">
-                                                        ↕️{" "}
-                                                        {c.votes?.reduce((acc, v) => acc + v.value, 0) || 0}
-                                                    </span>
-                                                )}
+                                                <div className="flex items-center gap-3">
+                                                    <button onClick={async () => {
+                                                        if (!user) { if (window.confirm("Debes iniciar sesión para votar. ¿Ir a Login?")) navigate("/login"); return; }
+                                                        try { await api.post(`/interactions/vote/${c.id}`, { value: userVote === 1 ? 0 : 1 }); fetchReport(); } catch(err) { alert(err.response?.data?.message || "Error al votar"); }
+                                                    }} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === 1 ? "text-emerald-500 font-bold" : "text-gray-400 hover:text-emerald-500")}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                                                    </button>
+                                                    <span className={"text-xs font-semibold " + (voteScore > 0 ? "text-emerald-600" : voteScore < 0 ? "text-red-500" : "text-gray-500")}>{voteScore}</span>
+                                                    <button onClick={async () => {
+                                                        if (!user) { if (window.confirm("Debes iniciar sesión para votar. ¿Ir a Login?")) navigate("/login"); return; }
+                                                        try { await api.post(`/interactions/vote/${c.id}`, { value: userVote === -1 ? 0 : -1 }); fetchReport(); } catch(err) { alert(err.response?.data?.message || "Error al votar"); }
+                                                    }} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === -1 ? "text-red-500 font-bold" : "text-gray-400 hover:text-red-500")}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"/></svg>
+                                                    </button>
+                                                    <button onClick={() => {
+                                                        if (!user) { if (window.confirm("Debes iniciar sesión para responder. ¿Ir a Login?")) navigate("/login"); return; }
+                                                        handleReplyPrompt(c.user.username || c.user.firstName);
+                                                    }} className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer">
+                                                        Responder
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1014,10 +993,29 @@ export default function ReportDetail() {
                                 </button>
                             </div>
                             {commentFiles.length > 0 && (
-                                <p className="text-xs text-emerald-600">
-                                    {commentFiles.length} imagen(es) adjuntas
-                                    para el comentario
-                                </p>
+                                <div className="flex gap-2 items-center flex-wrap pt-2">
+                                    {commentFiles.map((file, idx) => {
+                                        const isVideo = file.type.startsWith('video/');
+                                        const url = URL.createObjectURL(file);
+                                        return (
+                                            <div key={idx} className="relative w-16 h-16 rounded-md overflow-hidden bg-gray-900 border border-gray-200">
+                                                {isVideo ? (
+                                                    <video src={url} className="w-full h-full object-cover opacity-50" />
+                                                ) : (
+                                                    <img src={url} className="w-full h-full object-cover" alt="preview" />
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCommentFiles(commentFiles.filter((_, i) => i !== idx))}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer hover:bg-red-600"
+                                                    title="Eliminar"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             )}
                         </form>
                     ) : (
