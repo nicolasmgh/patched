@@ -1,1 +1,0 @@
-const fs = require('fs'); let txt = fs.readFileSync('apps/web/src/pages/ReportDetail.jsx', 'utf8'); let fixed = `; try { fixed = decodeURIComponent(escape(txt)); } catch(e) { console.log('error', e.message); } fs.writeFileSync('apps/web/src/pages/ReportDetail.jsx', fixed, 'utf8'); console.log('File successfully recovered: ' + fixed.includes('Escribí'));
