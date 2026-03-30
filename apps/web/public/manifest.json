@@ -1,6 +1,6 @@
 {
-  "name": "UrbanPatch",
-  "short_name": "UrbanPatch",
+  "name": "Patched",
+  "short_name": "Patched",
   "description": "Reportá problemas de infraestructura urbana en tu ciudad",
   "start_url": "/",
   "display": "standalone",

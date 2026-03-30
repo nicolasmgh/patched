@@ -24,7 +24,7 @@ io.on("connection", (socket) => {
 
 // Health check
 app.get("/health", (req, res) => {
-    res.json({ status: "ok", app: "UrbanPatch API", version: "1.0.0" });
+    res.json({ status: "ok", app: "Patched API", version: "1.0.0" });
 });
 
 // Rutas
@@ -38,5 +38,5 @@ app.use("/api/stats", require("./routes/stats"));
 app.use("/api/users", require("./routes/users"));
 
 server.listen(PORT, () => {
-    console.log(`UrbanPatch API corriendo en http://localhost:${PORT}`);
+    console.log(`Patched API corriendo en http://localhost:${PORT}`);
 });

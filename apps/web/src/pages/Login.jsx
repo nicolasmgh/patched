@@ -65,7 +65,7 @@ export default function Login() {
                     to="/"
                     className="text-xl font-bold text-emerald-600 tracking-tight block mb-8"
                 >
-                    🗺️ UrbanPatch
+                    🗺️ Patched
                 </Link>
 
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">

@@ -11,8 +11,8 @@ export default defineConfig({
             registerType: "autoUpdate",
             includeAssets: ["icon.svg"],
             manifest: {
-                name: "UrbanPatch",
-                short_name: "UrbanPatch",
+                name: "Patched",
+                short_name: "Patched",
                 description:
                     "Reportá problemas de infraestructura urbana en tu ciudad",
                 theme_color: "#059669",

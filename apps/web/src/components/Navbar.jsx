@@ -120,7 +120,7 @@ export default function Navbar() {
                 to="/"
                 className="text-xl font-bold text-emerald-600 tracking-tight"
             >
-                🗺️ UrbanPatch
+                🗺️ Patched
             </Link>
 
             <div className="flex items-center gap-4">
