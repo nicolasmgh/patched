@@ -694,13 +694,13 @@ export default function Admin() {
                                         <div className="h-48 bg-gray-100 relative">
                                             {m.type === "PHOTO" ? (
                                                 <img
-                                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                    src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                     alt="Media pendiente"
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
                                                 <video
-                                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                    src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                     className="w-full h-full object-cover bg-black"
                                                     controls
                                                 />

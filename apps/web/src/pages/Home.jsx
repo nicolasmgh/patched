@@ -289,7 +289,7 @@ export default function Home() {
                                                                 "VIDEO" ? (
                                                                     <div className="w-full h-full bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
                                                                         <video
-                                                                            src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                                            src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                                             className="w-full h-full object-cover rounded-lg opacity-50"
                                                                         />
                                                                         <span className="absolute text-white text-2xl drop-shadow-md">
@@ -298,7 +298,7 @@ export default function Home() {
                                                                     </div>
                                                                 ) : (
                                                                     <img
-                                                                        src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                                        src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                                         className="w-full h-full aspect-square object-cover rounded-lg hover:opacity-90 transition"
                                                                         alt="foto"
                                                                     />
@@ -563,14 +563,14 @@ export default function Home() {
                         <div className="relative max-w-[90vw] max-h-full flex items-center justify-center">
                             {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
                                 <video
-                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}
+                                    src={`${lightboxMedia[lightboxIndex].url?.startsWith("http") ? lightboxMedia[lightboxIndex].url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}`}
                                     controls
                                     autoPlay
                                     className="max-w-full max-h-[80vh] object-contain rounded"
                                 />
                             ) : (
                                 <img
-                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}
+                                    src={`${lightboxMedia[lightboxIndex].url?.startsWith("http") ? lightboxMedia[lightboxIndex].url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}`}
                                     alt="Vista ampliada"
                                     className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
                                 />

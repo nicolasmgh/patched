@@ -456,7 +456,7 @@ export default function Stats() {
                                                 </span>
                                                 {user.avatarUrl ? (
                                                     <img
-                                                        src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${user.avatarUrl}`}
+                                                        src={`${user.avatarUrl?.startsWith("http") ? user.avatarUrl : `${import.meta.env.VITE_API_URL.replace("/api", "")}${user.avatarUrl}`}`}
                                                         alt="Avatar"
                                                         className="w-10 h-10 rounded-full object-cover"
                                                     />

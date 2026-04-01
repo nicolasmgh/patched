@@ -742,7 +742,7 @@ export default function ReportDetail() {
                                     {m.type === "VIDEO" ? (
                                         <div className="w-full h-full bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
                                             <video
-                                                src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                 className="w-full h-full object-cover rounded-lg opacity-50"
                                             />
                                             <span className="absolute text-white text-2xl drop-shadow-md">
@@ -751,7 +751,7 @@ export default function ReportDetail() {
                                         </div>
                                     ) : (
                                         <img
-                                            src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                            src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                             className="w-full h-full object-cover rounded-lg hover:opacity-90 transition"
                                             alt="foto del reporte"
                                         />
@@ -785,7 +785,7 @@ export default function ReportDetail() {
                                             {m.type === "VIDEO" ? (
                                                 <div className="h-24 aspect-square bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
                                                     <video
-                                                        src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                        src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                         className="w-full h-full object-cover rounded-lg opacity-50"
                                                     />
                                                     <span className="absolute text-white text-xl">
@@ -794,7 +794,7 @@ export default function ReportDetail() {
                                                 </div>
                                             ) : (
                                                 <img
-                                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                    src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                     className="h-24 aspect-square rounded-lg object-cover hover:opacity-90 transition"
                                                     alt="antes"
                                                 />
@@ -824,7 +824,7 @@ export default function ReportDetail() {
                                             {m.type === "VIDEO" ? (
                                                 <div className="h-24 aspect-square bg-gray-900 rounded-lg flex items-center justify-center relative hover:opacity-90 transition">
                                                     <video
-                                                        src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                        src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                         className="w-full h-full object-cover rounded-lg opacity-50"
                                                     />
                                                     <span className="absolute text-white text-xl">
@@ -833,7 +833,7 @@ export default function ReportDetail() {
                                                 </div>
                                             ) : (
                                                 <img
-                                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                    src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                     className="h-24 aspect-square rounded-lg object-cover hover:opacity-90 transition"
                                                     alt="después"
                                                 />
@@ -995,7 +995,7 @@ export default function ReportDetail() {
                                                                         "VIDEO" ? (
                                                                             <div className="h-16 w-16 bg-gray-900 rounded-md flex items-center justify-center relative hover:opacity-90 transition">
                                                                                 <video
-                                                                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                                                    src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                                                     className="w-full h-full object-cover rounded-md opacity-50"
                                                                                 />
                                                                                 <span className="absolute text-white text-lg">
@@ -1004,7 +1004,7 @@ export default function ReportDetail() {
                                                                             </div>
                                                                         ) : (
                                                                             <img
-                                                                                src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                                                src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                                                 alt="comentario"
                                                                                 className="h-16 w-16 object-cover rounded-md hover:opacity-90 transition"
                                                                             />
@@ -1491,14 +1491,14 @@ export default function ReportDetail() {
                         <div className="relative max-w-[90vw] max-h-full flex items-center justify-center">
                             {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
                                 <video
-                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}
+                                    src={`${lightboxMedia[lightboxIndex].url?.startsWith("http") ? lightboxMedia[lightboxIndex].url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}`}
                                     controls
                                     autoPlay
                                     className="max-w-full max-h-[80vh] object-contain rounded"
                                 />
                             ) : (
                                 <img
-                                    src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}
+                                    src={`${lightboxMedia[lightboxIndex].url?.startsWith("http") ? lightboxMedia[lightboxIndex].url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${lightboxMedia[lightboxIndex].url}`}`}
                                     alt="Vista ampliada"
                                     className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
                                 />

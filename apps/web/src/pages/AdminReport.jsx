@@ -220,7 +220,7 @@ export default function AdminReport() {
                                             rel="noreferrer"
                                         >
                                             <img
-                                                src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                                src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                                 className="h-20 w-20 object-cover rounded-lg"
                                                 alt="foto"
                                             />
@@ -263,7 +263,7 @@ export default function AdminReport() {
                                         rel="noreferrer"
                                     >
                                         <img
-                                            src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
+                                            src={`${m.url?.startsWith("http") ? m.url : `${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}`}
                                             className="h-20 w-20 object-cover rounded-lg"
                                             alt="después"
                                         />
