@@ -100,6 +100,16 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/stats", require("./routes/stats"));
 app.use("/api/users", require("./routes/users"));
 
+// Error handler global para que los errores como los de Multer o Cloudinary devuelvan JSON
+app.use((err, req, res, next) => {
+    console.error("Error global en el servidor:", err);
+    if (err.name === 'MulterError' || err.message.includes('No permitido por CORS')) {
+        return res.status(400).json({ ok: false, message: err.message });
+    }
+    // Si no tenes los datos de Cloudinary u otra config
+    res.status(500).json({ ok: false, message: err.message || "Error interno del servidor" });
+});
+
 server.listen(PORT, () => {
     console.log(`Patched API corriendo en http://localhost:${PORT}`);
 });
