@@ -86,7 +86,9 @@ export default function Home() {
     const sidebarWasOpen = useRef(false);
 
     useEffect(() => {
-        fetchReports();
+        if (mapBounds) {
+            fetchReports();
+        }
     }, [filters, mapBounds]);
 
     const fetchReports = async () => {

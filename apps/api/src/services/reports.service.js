@@ -14,6 +14,25 @@ const create = async (data, userId) => {
         country,
     } = data;
 
+    // Sistema Anti-SPAM: Prevenir reportes con igual título o en las mismas coordenadas exactas en las últimas horas
+    if (userId) {
+        const recentDuplicate = await prisma.report.findFirst({
+            where: {
+                userId,
+                createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+                OR: [
+                    { title: title.trim() },
+                    { description: description ? description.trim() : "" },
+                ],
+            },
+        });
+        if (recentDuplicate) {
+            throw new Error(
+                "Anti-SPAM: Ya enviaste un reporte idéntico o muy similar recientemente. Por favor, espera antes de enviar otro.",
+            );
+        }
+    }
+
     const report = await prisma.report.create({
         data: {
             title,

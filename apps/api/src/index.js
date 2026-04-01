@@ -31,12 +31,37 @@ const reportLimiter = rateLimit({
     max: 20, // 20 reportes por hora
     message: "Has superado el límite de reportes por hora.",
 });
+
+// Limiter para comentarios (Anti-SPAM)
+const commentLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 30, // 30 comentarios cada 15 seg/min => No, pongamos 30 cada 15 min. Es bastante.
+    message: "Estás comentando demasiado rápido. Espera un momento.",
+});
+
+// Limiter para registro de usuarios (Anti-SPAM bots)
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000 * 24, // 24 horas
+    max: 10, // máximo 10 cuentas por IP al día
+    message:
+        "Demasiadas cuentas creadas desde esta IP, por favor intenta mañana.",
+});
+
 app.use("/api/reports", (req, res, next) => {
     if (req.method === "POST") {
         return reportLimiter(req, res, next);
     }
     next();
 });
+
+app.use("/api/reports/:id/comments", (req, res, next) => {
+    if (req.method === "POST") {
+        return commentLimiter(req, res, next);
+    }
+    next();
+});
+
+app.use("/api/auth/register", registerLimiter);
 
 io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);

@@ -6,6 +6,22 @@ const create = async (reportId, userId, { content }) => {
     if (!report) throw new Error("Reporte no encontrado");
     if (!content?.trim()) throw new Error("El comentario no puede estar vacío");
 
+    // Filtro anti-spam de comentarios duplicados
+    const recentSameComment = await prisma.comment.findFirst({
+        where: {
+            userId,
+            reportId,
+            content: content.trim(),
+            createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // 5 min
+        },
+    });
+
+    if (recentSameComment) {
+        throw new Error(
+            "Anti-SPAM: Ya enviaste un comentario idéntico recientemente.",
+        );
+    }
+
     const comment = await prisma.comment.create({
         data: {
             content: content.trim(),

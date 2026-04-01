@@ -2,6 +2,7 @@ const { getIO } = require("../utils/socket");
 const fs = require("fs");
 const path = require("path");
 const prisma = require("../utils/prisma");
+const { sendStatusUpdateEmail } = require("../utils/email");
 
 const changeStatus = async (
     reportId,
@@ -172,6 +173,19 @@ const changeStatus = async (
 
         const { emitNotification } = require("../utils/socket");
         emitNotification(notif);
+
+        // Enviar email asincrónicamente
+        const user = await prisma.user.findUnique({
+            where: { id: report.userId },
+        });
+        if (user && user.email) {
+            sendStatusUpdateEmail(
+                user.email,
+                user.firstName,
+                report.title,
+                status,
+            ).catch(console.error);
+        }
     }
 
     try {
