@@ -36,6 +36,7 @@ export default function Stats() {
     const [abandonment, setAbandonment] = useState([]);
     const [resolution, setResolution] = useState([]);
     const [heatmap, setHeatmap] = useState([]);
+    const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -45,18 +46,20 @@ export default function Stats() {
     const fetchAll = async () => {
         setLoading(true);
         try {
-            const [s, r, a, res, h] = await Promise.all([
+            const [s, r, a, res, h, l] = await Promise.all([
                 api.get("/stats"),
                 api.get("/stats/ranking"),
                 api.get("/stats/abandonment"),
                 api.get("/stats/resolution-time"),
                 api.get("/stats/heatmap"),
+                api.get("/stats/leaderboard"),
             ]);
             setStats(s.data);
             setRanking(r.data.ranking);
             setAbandonment(a.data.abandonment);
             setResolution(res.data.resolutionTime);
             setHeatmap(h.data.points);
+            setLeaderboard(l.data.users);
         } catch (err) {
             console.error(err);
         } finally {

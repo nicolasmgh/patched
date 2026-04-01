@@ -312,6 +312,16 @@ export default function Profile() {
                                                 ⭐ {profile?.reputation} pts
                                             </span>
                                         </div>
+                                        <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                                            <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg min-w-[80px]">
+                                                <span className="font-bold text-emerald-600">{profile?._count?.reports || 0}</span>
+                                                <span className="text-xs">Reportes</span>
+                                            </div>
+                                            <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg min-w-[80px]">
+                                                <span className="font-bold text-blue-600">{profile?._count?.confirmations || 0}</span>
+                                                <span className="text-xs">Validaciones</span>
+                                            </div>
+                                        </div>
                                     </>
                                 )}
                             </div>
@@ -442,11 +452,13 @@ export default function Profile() {
                                             <span>💬 {r._count.comments}</span>
                                         </div>
                                     </div>
-                                    <span
-                                        className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[r.status]}`}
-                                    >
-                                        {STATUS_LABELS[r.status]}
-                                    </span>
+                                    {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
+                                        <span
+                                            className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[r.status]}`}
+                                        >
+                                            {STATUS_LABELS[r.status]}
+                                        </span>
+                                    )}
                                 </Link>
                             ))
                         )}
@@ -599,12 +611,19 @@ export default function Profile() {
                                             n.type !== "REPORT_REJECTED"
                                         ) {
                                             if (
-                                                ["ADMIN", "COLLABORATOR"].includes(user?.role) && 
+                                                [
+                                                    "ADMIN",
+                                                    "COLLABORATOR",
+                                                ].includes(user?.role) &&
                                                 n.data?.status === "PENDING"
                                             ) {
-                                                navigate(`/admin/reports/${n.data.reportId}`);
+                                                navigate(
+                                                    `/admin/reports/${n.data.reportId}`,
+                                                );
                                             } else {
-                                                navigate(`/reports/${n.data.reportId}`);
+                                                navigate(
+                                                    `/reports/${n.data.reportId}`,
+                                                );
                                             }
                                         }
                                     }}

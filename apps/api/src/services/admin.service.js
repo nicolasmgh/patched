@@ -3,7 +3,13 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../utils/prisma");
 
-const changeStatus = async (reportId, status, adminId, details = null, duplicateId = null) => {
+const changeStatus = async (
+    reportId,
+    status,
+    adminId,
+    details = null,
+    duplicateId = null,
+) => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report) throw new Error("Reporte no encontrado");
 
@@ -33,9 +39,10 @@ const changeStatus = async (reportId, status, adminId, details = null, duplicate
 
     const data = { status };
     if (status === "RESOLVED") data.resolvedAt = new Date();
-    
+
     if (status === "DUPLICATE") {
-        if (!duplicateId) throw new Error("Debes ingresar el ID del reporte original.");
+        if (!duplicateId)
+            throw new Error("Debes ingresar el ID del reporte original.");
         const originalReport = await prisma.report.findUnique({
             where: { id: duplicateId },
         });
@@ -43,7 +50,7 @@ const changeStatus = async (reportId, status, adminId, details = null, duplicate
             throw new Error("El reporte original indicado no existe.");
         }
         data.duplicateId = duplicateId;
-        
+
         // Transfer images to original report
         await prisma.media.updateMany({
             where: { reportId },
@@ -89,7 +96,7 @@ const changeStatus = async (reportId, status, adminId, details = null, duplicate
     if (status === "APPROVED") {
         await prisma.media.updateMany({
             where: { reportId, status: "PENDING" },
-            data: { status: "APPROVED" }
+            data: { status: "APPROVED" },
         });
     }
 
@@ -418,13 +425,21 @@ const getPendingMedia = async () => {
             OR: [
                 {
                     reportId: { not: null },
-                    report: { status: { notIn: ["PENDING", "REJECTED", "DUPLICATE"] } }
+                    report: {
+                        status: { notIn: ["PENDING", "REJECTED", "DUPLICATE"] },
+                    },
                 },
                 {
                     commentId: { not: null },
-                    comment: { report: { status: { notIn: ["PENDING", "REJECTED", "DUPLICATE"] } } }
-                }
-            ]
+                    comment: {
+                        report: {
+                            status: {
+                                notIn: ["PENDING", "REJECTED", "DUPLICATE"],
+                            },
+                        },
+                    },
+                },
+            ],
         },
         orderBy: { createdAt: "desc" },
         include: {

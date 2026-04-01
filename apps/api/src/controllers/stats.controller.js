@@ -45,10 +45,20 @@ const getHeatmapData = async (req, res) => {
     }
 };
 
+const getTopUsers = async (req, res) => {
+    try {
+        const users = await statsService.getTopUsers();
+        res.status(200).json({ ok: true, users });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+    }
+};
+
 module.exports = {
     getPublicStats,
     getRankingByCity,
     getAbandonmentIndex,
     getAvgResolutionTime,
     getHeatmapData,
+    getTopUsers,
 };

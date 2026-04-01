@@ -2,7 +2,12 @@
 const path = require("path");
 const fs = require("fs");
 
-const attachToReport = async (reportId, files, userId, { isBefore = false, isAfter = false } = {}) => {
+const attachToReport = async (
+    reportId,
+    files,
+    userId,
+    { isBefore = false, isAfter = false } = {},
+) => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report) throw new Error("Reporte no encontrado");
 
@@ -36,21 +41,24 @@ const attachToReport = async (reportId, files, userId, { isBefore = false, isAft
                 data: { reportId: report.id, status: "PENDING" },
             }));
             await prisma.notification.createMany({ data: notifData });
-            
+
             const createdNotifs = await prisma.notification.findMany({
                 where: {
                     type: "REPORT_STATUS_CHANGED",
                     data: { path: ["reportId"], equals: report.id },
                 },
                 orderBy: { createdAt: "desc" },
-                take: admins.length
+                take: admins.length,
             });
 
             const { emitNotification } = require("../utils/socket");
             createdNotifs.forEach((n) => emitNotification(n));
         }
     } catch (err) {
-        console.error("Error enviando notificaciones a admins para nueva media:", err);
+        console.error(
+            "Error enviando notificaciones a admins para nueva media:",
+            err,
+        );
     }
 
     return media;
@@ -59,7 +67,7 @@ const attachToReport = async (reportId, files, userId, { isBefore = false, isAft
 const attachToComment = async (commentId, files, userId) => {
     const comment = await prisma.comment.findUnique({
         where: { id: commentId },
-        include: { report: true }
+        include: { report: true },
     });
     if (!comment) throw new Error("Comentario no encontrado");
 
@@ -91,17 +99,23 @@ const attachToComment = async (commentId, files, userId) => {
                 data: { reportId: comment.report.id, status: "PENDING" },
             }));
             await prisma.notification.createMany({ data: notifData });
-            
+
             const { emitNotification } = require("../utils/socket");
             const notifs = await prisma.notification.findMany({
-                where: { type: "REPORT_STATUS_CHANGED", userId: { in: admins.map(a => a.id) } },
+                where: {
+                    type: "REPORT_STATUS_CHANGED",
+                    userId: { in: admins.map((a) => a.id) },
+                },
                 orderBy: { createdAt: "desc" },
-                take: admins.length
+                take: admins.length,
             });
             notifs.forEach((n) => emitNotification(n));
         }
     } catch (err) {
-        console.error("Error enviando notificaciones a admins para nueva media (comentario):", err);
+        console.error(
+            "Error enviando notificaciones a admins para nueva media (comentario):",
+            err,
+        );
     }
 
     return media;
@@ -137,4 +151,3 @@ const deleteMedia = async (mediaId, userId, userRole) => {
 };
 
 module.exports = { attachToReport, attachToComment, deleteMedia };
-

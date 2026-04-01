@@ -57,16 +57,22 @@ export default function AdminReport() {
 
     const handleStatusChange = async (status) => {
         if (status === "REJECTED" && !details.trim()) {
-            alert("Debes ingresar un motivo de justificación para rechazar el reporte.");
+            alert(
+                "Debes ingresar un motivo de justificación para rechazar el reporte.",
+            );
             return;
         }
-        
+
         let origId = undefined;
         if (status === "DUPLICATE") {
-            origId = window.prompt("Ingresa el ID del reporte original/existente al que se unificará este:");
+            origId = window.prompt(
+                "Ingresa el ID del reporte original/existente al que se unificará este:",
+            );
             if (origId === null) return;
             if (!origId.trim()) {
-                alert("Debes ingresar un ID de reporte válido para poder duplicar.");
+                alert(
+                    "Debes ingresar un ID de reporte válido para poder duplicar.",
+                );
                 return;
             }
             origId = origId.trim();
@@ -76,7 +82,11 @@ export default function AdminReport() {
             return;
         setSubmitting(true);
         try {
-            await api.patch(`/admin/reports/${id}/status`, { status, details, duplicateId: origId });
+            await api.patch(`/admin/reports/${id}/status`, {
+                status,
+                details,
+                duplicateId: origId,
+            });
             await fetchReport();
             setDetails("");
         } catch (err) {
@@ -106,12 +116,19 @@ export default function AdminReport() {
     };
 
     const handleDeleteMedia = async (mediaId) => {
-        if (!window.confirm("¿Estás seguro de que quieres eliminar esta imagen/video permanentemente?")) return;
+        if (
+            !window.confirm(
+                "¿Estás seguro de que quieres eliminar esta imagen/video permanentemente?",
+            )
+        )
+            return;
         try {
             await api.delete(`/media/${mediaId}`);
             await fetchReport();
         } catch (err) {
-            alert(err.response?.data?.message || "Error al eliminar multimedia");
+            alert(
+                err.response?.data?.message || "Error al eliminar multimedia",
+            );
         }
     };
 
@@ -160,11 +177,16 @@ export default function AdminReport() {
                             <span className="text-sm px-3 py-1 rounded-full font-medium bg-gray-100 text-gray-700 shrink-0">
                                 {STATUS_LABELS[report.status]}
                             </span>
-                            {report.status === "DUPLICATE" && report.duplicateId && (
-                                <Link to={`/admin/reports/${report.duplicateId}`} className="text-xs text-blue-500 hover:underline">
-                                    Ver original ({report.duplicateId.slice(0,8)}...)
-                                </Link>
-                            )}
+                            {report.status === "DUPLICATE" &&
+                                report.duplicateId && (
+                                    <Link
+                                        to={`/admin/reports/${report.duplicateId}`}
+                                        className="text-xs text-blue-500 hover:underline"
+                                    >
+                                        Ver original (
+                                        {report.duplicateId.slice(0, 8)}...)
+                                    </Link>
+                                )}
                         </div>
                     </div>
                     <p className="text-sm text-gray-500 mb-2">
@@ -204,7 +226,11 @@ export default function AdminReport() {
                                             />
                                         </a>
                                         <button
-                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMedia(m.id); }}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleDeleteMedia(m.id);
+                                            }}
                                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                             title="Eliminar imagen"
                                         >
@@ -243,7 +269,11 @@ export default function AdminReport() {
                                         />
                                     </a>
                                     <button
-                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMedia(m.id); }}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDeleteMedia(m.id);
+                                        }}
                                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                         title="Eliminar imagen"
                                     >

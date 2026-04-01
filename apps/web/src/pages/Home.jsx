@@ -87,16 +87,27 @@ export default function Home() {
 
     useEffect(() => {
         fetchReports();
-    }, [filters]);
+    }, [filters, mapBounds]);
 
     const fetchReports = async () => {
         try {
-            setLoading(true);
+            // No resetear la pantalla entera solo por mover el mapa
+            if (reports.length === 0) setLoading(true);
             const params = Object.fromEntries(
                 Object.entries(filters).filter(([, v]) => v),
             );
             params.status = "APPROVED,IN_PROGRESS";
+            
+            if (mapBounds) {
+                params.minLat = mapBounds._southWest.lat;
+                params.maxLat = mapBounds._northEast.lat;
+                params.minLng = mapBounds._southWest.lng;
+                params.maxLng = mapBounds._northEast.lng;
+            }
+
             const res = await api.get("/reports", { params });
+            // Guardar solo si cambiaron para no forzar re-render si no hay nuevos
+            // o podrÃ­amos mergearlos, pero reemplazar funciona si la query de bounds trae todo
             setReports(res.data.reports);
         } catch (err) {
             console.error(err);
@@ -105,15 +116,7 @@ export default function Home() {
         }
     };
 
-    const visibleReports = mapBounds
-        ? reports.filter(
-              (r) =>
-                  r.latitude >= mapBounds._southWest.lat &&
-                  r.latitude <= mapBounds._northEast.lat &&
-                  r.longitude >= mapBounds._southWest.lng &&
-                  r.longitude <= mapBounds._northEast.lng,
-          )
-        : reports;
+    const visibleReports = reports;
 
     const handleCloseReport = () => {
         if (sidebarWasOpen.current) {

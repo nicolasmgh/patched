@@ -106,10 +106,10 @@ export default function Navbar() {
         ) {
             let hash = "";
             if (n.data?.commentId) hash = `#comment-${n.data.commentId}`;
-            
+
             // if admin/collab and it's a pending moderation notification, go to admin panel
             if (
-                ["ADMIN", "COLLABORATOR"].includes(user?.role) && 
+                ["ADMIN", "COLLABORATOR"].includes(user?.role) &&
                 n.data?.status === "PENDING"
             ) {
                 navigate(`/admin/reports/${n.data.reportId}`);

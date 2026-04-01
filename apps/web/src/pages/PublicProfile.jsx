@@ -109,120 +109,145 @@ export default function PublicProfile() {
                             <span className="text-xs text-gray-400 mt-1 block">
                                 ⭐ {profile.reputation} pts
                             </span>
+                            <div className="flex gap-4 mt-3 text-sm text-gray-600">
+                                <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg min-w-[80px]">
+                                    <span className="font-bold text-emerald-600">
+                                        {profile._count?.reports || 0}
+                                    </span>
+                                    <span className="text-xs">Reportes</span>
+                                </div>
+                                <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg min-w-[80px]">
+                                    <span className="font-bold text-blue-600">
+                                        {profile._count?.confirmations || 0}
+                                    </span>
+                                    <span className="text-xs">
+                                        Validaciones
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
-                        <div className="text-center">
-                            <p className="text-2xl font-bold text-gray-900">
-                                {profile._count?.reports}
-                            </p>
-                            <p className="text-xs text-gray-400">Reportes</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-2xl font-bold text-gray-900">
-                                {profile._count?.confirmations}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                Confirmaciones dadas
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-4">
-                    {[
-                        { key: "reports", label: "Reportes" },
-                        { key: "badges", label: "Badges" },
-                    ].map((t) => (
-                        <button
-                            key={t.key}
-                            onClick={() => setTab(t.key)}
-                            className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                                tab === t.key
-                                    ? "bg-emerald-600 text-white"
-                                    : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Tab: Reportes */}
-                {tab === "reports" && (
-                    <div className="flex flex-col gap-3">
-                        {profile.reports?.length === 0 ? (
-                            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-                                <p className="text-gray-400 text-sm">
-                                    Este usuario no tiene reportes
+                        <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {profile._count?.reports}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    Reportes
                                 </p>
                             </div>
-                        ) : (
-                            profile.reports?.map((r) => (
-                                <Link
-                                    key={r.id}
-                                    to={`/reports/${r.id}`}
-                                    className="bg-white rounded-2xl border border-gray-200 p-4 hover:border-emerald-300 transition flex items-start justify-between gap-4"
-                                >
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-800">
-                                            {r.title}
-                                        </p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {CATEGORY_LABELS[r.category]} ·{" "}
-                                            {new Date(
-                                                r.createdAt,
-                                            ).toLocaleDateString("es-AR")}
-                                        </p>
-                                        <div className="flex gap-3 mt-2 text-xs text-gray-400">
-                                            <span>
-                                                ✓ {r._count.confirmations}
-                                            </span>
-                                            <span>💬 {r._count.comments}</span>
-                                        </div>
-                                    </div>
-                                    <span
-                                        className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[r.status]}`}
-                                    >
-                                        {STATUS_LABELS[r.status]}
-                                    </span>
-                                </Link>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {/* Tab: Badges */}
-                {tab === "badges" && (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                        {profile.badges?.length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center">
-                                Este usuario no tiene badges todavía
-                            </p>
-                        ) : (
-                            <div className="grid grid-cols-3 gap-4">
-                                {profile.badges?.map((ub) => (
-                                    <div
-                                        key={ub.id}
-                                        className="text-center p-4 bg-gray-50 rounded-xl"
-                                    >
-                                        <p className="text-2xl mb-1">
-                                            {ub.badge.iconUrl || "🏅"}
-                                        </p>
-                                        <p className="text-sm font-medium text-gray-800">
-                                            {ub.badge.name}
-                                        </p>
-                                        <p className="text-xs text-gray-400">
-                                            {ub.badge.description}
-                                        </p>
-                                    </div>
-                                ))}
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {profile._count?.confirmations}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    Confirmaciones dadas
+                                </p>
                             </div>
-                        )}
+                        </div>
                     </div>
-                )}
+
+                    {/* Tabs */}
+                    <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-4">
+                        {[
+                            { key: "reports", label: "Reportes" },
+                            { key: "badges", label: "Badges" },
+                        ].map((t) => (
+                            <button
+                                key={t.key}
+                                onClick={() => setTab(t.key)}
+                                className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                                    tab === t.key
+                                        ? "bg-emerald-600 text-white"
+                                        : "text-gray-500 hover:text-gray-700"
+                                }`}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Tab: Reportes */}
+                    {tab === "reports" && (
+                        <div className="flex flex-col gap-3">
+                            {profile.reports?.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+                                    <p className="text-gray-400 text-sm">
+                                        Este usuario no tiene reportes
+                                    </p>
+                                </div>
+                            ) : (
+                                profile.reports?.map((r) => (
+                                    <Link
+                                        key={r.id}
+                                        to={`/reports/${r.id}`}
+                                        className="bg-white rounded-2xl border border-gray-200 p-4 hover:border-emerald-300 transition flex items-start justify-between gap-4"
+                                    >
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {r.title}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                {CATEGORY_LABELS[r.category]} ·{" "}
+                                                {new Date(
+                                                    r.createdAt,
+                                                ).toLocaleDateString("es-AR")}
+                                            </p>
+                                            <div className="flex gap-3 mt-2 text-xs text-gray-400">
+                                                <span>
+                                                    ✓ {r._count.confirmations}
+                                                </span>
+                                                <span>
+                                                    💬 {r._count.comments}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {user &&
+                                            ["ADMIN", "COLLABORATOR"].includes(
+                                                user.role,
+                                            ) && (
+                                                <span
+                                                    className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[r.status]}`}
+                                                >
+                                                    {STATUS_LABELS[r.status]}
+                                                </span>
+                                            )}
+                                    </Link>
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    {/* Tab: Badges */}
+                    {tab === "badges" && (
+                        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                            {profile.badges?.length === 0 ? (
+                                <p className="text-sm text-gray-400 text-center">
+                                    Este usuario no tiene badges todavía
+                                </p>
+                            ) : (
+                                <div className="grid grid-cols-3 gap-4">
+                                    {profile.badges?.map((ub) => (
+                                        <div
+                                            key={ub.id}
+                                            className="text-center p-4 bg-gray-50 rounded-xl"
+                                        >
+                                            <p className="text-2xl mb-1">
+                                                {ub.badge.iconUrl || "🏅"}
+                                            </p>
+                                            <p className="text-sm font-medium text-gray-800">
+                                                {ub.badge.name}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                {ub.badge.description}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

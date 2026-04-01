@@ -44,7 +44,7 @@ const edit = async (req, res) => {
         const comment = await commentsService.edit(
             req.params.commentId,
             req.user.id,
-            req.body.content
+            req.body.content,
         );
         res.status(200).json({ ok: true, comment });
     } catch (err) {
@@ -56,7 +56,7 @@ const censor = async (req, res) => {
     try {
         const comment = await commentsService.censor(
             req.params.commentId,
-            req.user.role
+            req.user.role,
         );
         res.status(200).json({ ok: true, comment });
     } catch (err) {

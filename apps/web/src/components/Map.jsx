@@ -12,6 +12,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import { Link } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useAuth } from "../context/AuthContext";
 
 const CATEGORY_COLORS = {
     POTHOLE: "#ef4444",
@@ -129,6 +130,7 @@ export default function Map({
     onMarkerDragEnd = null,
     selectedReportId = null,
 }) {
+    const { user } = useAuth();
     return (
         <MapContainer
             center={center}
@@ -194,8 +196,13 @@ export default function Map({
                                         {report.address || report.city}
                                     </p>
                                     <p className="text-xs mt-1 text-gray-500">
-                                        {CATEGORY_LABELS[report.category]} ·{" "}
-                                        {STATUS_LABELS[report.status]}
+                                        {CATEGORY_LABELS[report.category]}
+                                        {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
+                                            <>
+                                                {" "}·{" "}
+                                                {STATUS_LABELS[report.status]}
+                                            </>
+                                        )}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
                                         <span>

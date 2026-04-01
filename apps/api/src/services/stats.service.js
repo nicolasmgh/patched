@@ -121,10 +121,37 @@ const getHeatmapData = async () => {
     return reports;
 };
 
+const getTopUsers = async () => {
+    const users = await prisma.user.findMany({
+        where: { active: true },
+        orderBy: { reputation: "desc" },
+        take: 50,
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            hideLastName: true,
+            username: true,
+            avatarUrl: true,
+            reputation: true,
+            _count: {
+                select: { reports: true }
+            }
+        }
+    });
+    
+    // Ocultar apellidos si el usuario lo requiere
+    return users.map(u => ({
+        ...u,
+        lastName: u.hideLastName ? "" : u.lastName
+    }));
+};
+
 module.exports = {
     getPublicStats,
     getRankingByCity,
     getAbandonmentIndex,
     getAvgResolutionTime,
     getHeatmapData,
+    getTopUsers,
 };

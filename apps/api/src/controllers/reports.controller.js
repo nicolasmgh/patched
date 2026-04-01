@@ -24,7 +24,10 @@ const getById = async (req, res) => {
         const report = await reportsService.getById(req.params.id, req.user);
         res.status(200).json({ ok: true, report });
     } catch (err) {
-        res.status(err.statusCode || 404).json({ ok: false, message: err.message });
+        res.status(err.statusCode || 404).json({
+            ok: false,
+            message: err.message,
+        });
     }
 };
 

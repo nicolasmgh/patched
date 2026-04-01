@@ -15,6 +15,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
+// Rate limiter general y restrictivo para reportes (Anti-Abuso)
+const rateLimit = require("express-rate-limit");
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 1000, // 1000 requests por IP cada 15 min
+    message: "Demasiadas peticiones desde esta IP, por favor intenta nuevamente más tarde."
+});
+app.use("/api/", apiLimiter);
+
+// Limiter mas estricto solo para reportes (Anti-SPAM)
+const reportLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 20, // 20 reportes por hora
+    message: "Has superado el límite de reportes por hora."
+});
+app.use("/api/reports", (req, res, next) => {
+    if (req.method === 'POST') {
+        return reportLimiter(req, res, next);
+    }
+    next();
+});
+
 io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
     socket.on("disconnect", () => {

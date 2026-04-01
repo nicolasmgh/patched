@@ -99,7 +99,10 @@ export default function ReportDetail() {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (mentionRef.current && !mentionRef.current.contains(event.target)) {
+            if (
+                mentionRef.current &&
+                !mentionRef.current.contains(event.target)
+            ) {
                 setShowMentions(false);
             }
         };
@@ -125,7 +128,9 @@ export default function ReportDetail() {
     const handleEditCommentSubmit = async (commentId) => {
         if (!editingCommentText.trim()) return;
         try {
-            await api.put(`/comments/${commentId}`, { content: editingCommentText });
+            await api.put(`/comments/${commentId}`, {
+                content: editingCommentText,
+            });
             setEditingCommentId(null);
             fetchReport();
         } catch (err) {
@@ -134,22 +139,28 @@ export default function ReportDetail() {
     };
 
     const handleDeleteComment = async (commentId) => {
-        if (!window.confirm("¿Estás seguro de eliminar este comentario?")) return;
+        if (!window.confirm("¿Estás seguro de eliminar este comentario?"))
+            return;
         try {
             await api.delete(`/comments/${commentId}`);
             fetchReport();
         } catch (err) {
-            alert(err.response?.data?.message || "Error al eliminar comentario");
+            alert(
+                err.response?.data?.message || "Error al eliminar comentario",
+            );
         }
     };
 
     const handleCensorComment = async (commentId) => {
-        if (!window.confirm("¿Censurar este comentario permanentemente?")) return;
+        if (!window.confirm("¿Censurar este comentario permanentemente?"))
+            return;
         try {
             await api.patch(`/comments/censor/${commentId}`);
             fetchReport();
         } catch (err) {
-            alert(err.response?.data?.message || "Error al censurar comentario");
+            alert(
+                err.response?.data?.message || "Error al censurar comentario",
+            );
         }
     };
 
@@ -212,21 +223,21 @@ export default function ReportDetail() {
         const handleReportUpdate = (data) => {
             console.log("📡 EVENTO RECIBIDO: reportUpdate", data);
             if (String(data.id) === String(id)) {
-                setReport((prev) => prev ? ({ ...prev, ...data }) : prev);
+                setReport((prev) => (prev ? { ...prev, ...data } : prev));
             }
         };
 
         const handleCommentAdded = (data) => {
             console.log("📡 EVENTO RECIBIDO: commentAdded", data);
             if (String(data.reportId) === String(id)) {
-                setReport(prev => {
+                setReport((prev) => {
                     if (!prev) return prev;
                     if (!prev.comments) prev.comments = [];
-                    const exists = prev.comments.some(c => c.id === data.id);
+                    const exists = prev.comments.some((c) => c.id === data.id);
                     if (exists) return prev;
                     return {
                         ...prev,
-                        comments: [...prev.comments, data] // Mantener coherencia visual agregándolo al final
+                        comments: [...prev.comments, data], // Mantener coherencia visual agregándolo al final
                     };
                 });
             }
@@ -345,21 +356,25 @@ export default function ReportDetail() {
             // confiamos en el socket para que lo inserte (previene llaves duplicadas).
             // Si hubiéramos actualizado localmente en el componente AND recibido el socket = 2 renders con mismo ID.
             if (commentFiles.length > 0) {
-               // Si tiene imágenes por el problema de asincronía sí lo actualizamos aquí y el backend
-               // emitirá de igual manera pero con nuestro chequeo de "exists" arriba se omitirá duplicado.
-               setReport((r) => {
-                   const exists = r.comments?.some(c => c.id === newComment.id);
-                   if (exists) {
-                       return {
-                           ...r,
-                           comments: r.comments.map(c => c.id === newComment.id ? newComment : c)
-                       }
-                   }
-                   return {
-                       ...r,
-                       comments: [newComment, ...r.comments],
-                   };
-               });
+                // Si tiene imágenes por el problema de asincronía sí lo actualizamos aquí y el backend
+                // emitirá de igual manera pero con nuestro chequeo de "exists" arriba se omitirá duplicado.
+                setReport((r) => {
+                    const exists = r.comments?.some(
+                        (c) => c.id === newComment.id,
+                    );
+                    if (exists) {
+                        return {
+                            ...r,
+                            comments: r.comments.map((c) =>
+                                c.id === newComment.id ? newComment : c,
+                            ),
+                        };
+                    }
+                    return {
+                        ...r,
+                        comments: [newComment, ...r.comments],
+                    };
+                });
             }
 
             setComment("");
@@ -423,7 +438,9 @@ export default function ReportDetail() {
 
     const handleReplyPrompt = (username) => {
         if (!username) return;
-        setComment(prev => prev ? prev + ` @${username} ` : `@${username} `);
+        setComment((prev) =>
+            prev ? prev + ` @${username} ` : `@${username} `,
+        );
         inputRef.current?.focus();
     };
 
@@ -502,11 +519,13 @@ export default function ReportDetail() {
                                 </div>
                             )}
                         </div>
-                        <span
-                            className={`text-sm px-3 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[report.status]}`}
-                        >
-                            {STATUS_LABELS[report.status]}
-                        </span>
+                        {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
+                            <span
+                                className={`text-sm px-3 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[report.status]}`}
+                            >
+                                {STATUS_LABELS[report.status]}
+                            </span>
+                        )}
                     </div>
                     <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
                         <span>
@@ -550,7 +569,9 @@ export default function ReportDetail() {
 
                     {/* Reportado por */}
                     <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-gray-500">Reportado por</span>
+                        <span className="text-xs text-gray-500">
+                            Reportado por
+                        </span>
                         <Link
                             to={
                                 user?.id === report.user?.id
@@ -559,10 +580,16 @@ export default function ReportDetail() {
                             }
                             className="flex items-center gap-1.5 hover:bg-gray-50 rounded-full pr-2 transition cursor-pointer"
                         >
-                            <UserAvatar user={report.user} className="w-5 h-5" textClass="text-[10px]" />
+                            <UserAvatar
+                                user={report.user}
+                                className="w-5 h-5"
+                                textClass="text-[10px]"
+                            />
                             <span className="text-xs text-emerald-600 font-medium hover:underline">
                                 {report.user?.firstName}{" "}
-                                {report.user?.hideLastName ? "" : report.user?.lastName}
+                                {report.user?.hideLastName
+                                    ? ""
+                                    : report.user?.lastName}
                                 {report.user?.username && (
                                     <span className="text-gray-500 ml-1 font-normal">
                                         @{report.user.username}
@@ -629,7 +656,7 @@ export default function ReportDetail() {
                         className="bg-white rounded-2xl border border-gray-200 overflow-hidden relative group"
                         style={{ height: 250 }}
                     >
-                        <a 
+                        <a
                             href={`https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -836,14 +863,29 @@ export default function ReportDetail() {
                             </p>
                         ) : (
                             report.comments.map((c) => {
-                                const userVote = user ? (c.votes?.find(v => v.userId === user.id)?.value || 0) : 0;
-                                const voteScore = c.votes?.reduce((acc, v) => acc + v.value, 0) || 0;
+                                const userVote = user
+                                    ? c.votes?.find((v) => v.userId === user.id)
+                                          ?.value || 0
+                                    : 0;
+                                const voteScore =
+                                    c.votes?.reduce(
+                                        (acc, v) => acc + v.value,
+                                        0,
+                                    ) || 0;
                                 const isOwner = user?.id === c.userId;
-                                const isAdminOrCollab = user?.role === "ADMIN" || user?.role === "COLLABORATOR";
-                                const isWithin5Mins = (new Date() - new Date(c.createdAt)) <= 300000;
+                                const isAdminOrCollab =
+                                    user?.role === "ADMIN" ||
+                                    user?.role === "COLLABORATOR";
+                                const isWithin5Mins =
+                                    new Date() - new Date(c.createdAt) <=
+                                    300000;
                                 const canEditDelete = isOwner && isWithin5Mins;
                                 return (
-                                    <div key={c.id} id={`comment-${c.id}`} className="flex gap-3">
+                                    <div
+                                        key={c.id}
+                                        id={`comment-${c.id}`}
+                                        className="flex gap-3"
+                                    >
                                         <div className="flex-1">
                                             <Link
                                                 to={
@@ -853,7 +895,11 @@ export default function ReportDetail() {
                                                 }
                                                 className="flex items-center gap-2 group cursor-pointer w-fit mb-1"
                                             >
-                                                <UserAvatar user={c.user} className="w-8 h-8" textClass="text-sm" />
+                                                <UserAvatar
+                                                    user={c.user}
+                                                    className="w-8 h-8"
+                                                    textClass="text-sm"
+                                                />
                                                 <div className="text-sm font-medium text-gray-800 group-hover:text-emerald-600 transition">
                                                     {c.user.firstName}{" "}
                                                     {c.user.hideLastName
@@ -868,20 +914,50 @@ export default function ReportDetail() {
                                             </Link>
                                             {editingCommentId === c.id ? (
                                                 <div className="flex flex-col gap-2 mt-1 mb-2">
-                                                    <textarea 
-                                                        value={editingCommentText}
-                                                        onChange={e => setEditingCommentText(e.target.value)}
+                                                    <textarea
+                                                        value={
+                                                            editingCommentText
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditingCommentText(
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                                         rows={2}
                                                     />
                                                     <div className="flex gap-2 justify-end">
-                                                        <button onClick={() => setEditingCommentId(null)} className="text-xs text-gray-500 hover:underline cursor-pointer">Cancelar</button>
-                                                        <button onClick={() => handleEditCommentSubmit(c.id)} className="text-xs text-emerald-600 font-medium hover:underline cursor-pointer">Guardar</button>
+                                                        <button
+                                                            onClick={() =>
+                                                                setEditingCommentId(
+                                                                    null,
+                                                                )
+                                                            }
+                                                            className="text-xs text-gray-500 hover:underline cursor-pointer"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleEditCommentSubmit(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                            className="text-xs text-emerald-600 font-medium hover:underline cursor-pointer"
+                                                        >
+                                                            Guardar
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <p className={`text-sm whitespace-pre-wrap ${c.flagged ? 'text-orange-700 font-medium italic' : 'text-gray-600'}`}>
-                                                    {c.flagged ? c.content : parseMentions(c.content)}
+                                                <p
+                                                    className={`text-sm whitespace-pre-wrap ${c.flagged ? "text-orange-700 font-medium italic" : "text-gray-600"}`}
+                                                >
+                                                    {c.flagged
+                                                        ? c.content
+                                                        : parseMentions(
+                                                              c.content,
+                                                          )}
                                                 </p>
                                             )}
                                             {c.media &&
@@ -937,7 +1013,7 @@ export default function ReportDetail() {
                                                             )}
                                                     </div>
                                                 )}
-<div className="flex items-center gap-3 mt-1">
+                                            <div className="flex items-center gap-3 mt-1">
                                                 <p className="text-xs text-gray-400">
                                                     {new Date(
                                                         c.createdAt,
@@ -947,43 +1023,192 @@ export default function ReportDetail() {
                                                     })}
                                                 </p>
                                                 <div className="flex items-center gap-3">
-                                                    <button onClick={async () => {
-                                                        if (!user) { if (window.confirm("Debes iniciar sesión para votar. ¿Ir a Login?")) navigate("/login"); return; }
-                                                        try { await api.post(`/interactions/vote/${c.id}`, { value: userVote === 1 ? 0 : 1 }); fetchReport(); } catch(err) { alert(err.response?.data?.message || "Error al votar"); }
-                                                    }} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === 1 ? "text-emerald-500 font-bold" : "text-gray-400 hover:text-emerald-500")}>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!user) {
+                                                                if (
+                                                                    window.confirm(
+                                                                        "Debes iniciar sesión para votar. ¿Ir a Login?",
+                                                                    )
+                                                                )
+                                                                    navigate(
+                                                                        "/login",
+                                                                    );
+                                                                return;
+                                                            }
+                                                            try {
+                                                                await api.post(
+                                                                    `/interactions/vote/${c.id}`,
+                                                                    {
+                                                                        value:
+                                                                            userVote ===
+                                                                            1
+                                                                                ? 0
+                                                                                : 1,
+                                                                    },
+                                                                );
+                                                                fetchReport();
+                                                            } catch (err) {
+                                                                alert(
+                                                                    err.response
+                                                                        ?.data
+                                                                        ?.message ||
+                                                                        "Error al votar",
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={
+                                                            "text-xs flex items-center gap-1 transition cursor-pointer " +
+                                                            (userVote === 1
+                                                                ? "text-emerald-500 font-bold"
+                                                                : "text-gray-400 hover:text-emerald-500")
+                                                        }
+                                                    >
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="16"
+                                                            height="16"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 16 16"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"
+                                                            />
+                                                        </svg>
                                                     </button>
-                                                    <span className={"text-xs font-semibold " + (voteScore > 0 ? "text-emerald-600" : voteScore < 0 ? "text-red-500" : "text-gray-500")}>{voteScore}</span>
-                                                    <button onClick={async () => {
-                                                        if (!user) { if (window.confirm("Debes iniciar sesión para votar. ¿Ir a Login?")) navigate("/login"); return; }
-                                                        try { await api.post(`/interactions/vote/${c.id}`, { value: userVote === -1 ? 0 : -1 }); fetchReport(); } catch(err) { alert(err.response?.data?.message || "Error al votar"); }
-                                                    }} className={"text-xs flex items-center gap-1 transition cursor-pointer " + (userVote === -1 ? "text-red-500 font-bold" : "text-gray-400 hover:text-red-500")}>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"/></svg>
+                                                    <span
+                                                        className={
+                                                            "text-xs font-semibold " +
+                                                            (voteScore > 0
+                                                                ? "text-emerald-600"
+                                                                : voteScore < 0
+                                                                  ? "text-red-500"
+                                                                  : "text-gray-500")
+                                                        }
+                                                    >
+                                                        {voteScore}
+                                                    </span>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!user) {
+                                                                if (
+                                                                    window.confirm(
+                                                                        "Debes iniciar sesión para votar. ¿Ir a Login?",
+                                                                    )
+                                                                )
+                                                                    navigate(
+                                                                        "/login",
+                                                                    );
+                                                                return;
+                                                            }
+                                                            try {
+                                                                await api.post(
+                                                                    `/interactions/vote/${c.id}`,
+                                                                    {
+                                                                        value:
+                                                                            userVote ===
+                                                                            -1
+                                                                                ? 0
+                                                                                : -1,
+                                                                    },
+                                                                );
+                                                                fetchReport();
+                                                            } catch (err) {
+                                                                alert(
+                                                                    err.response
+                                                                        ?.data
+                                                                        ?.message ||
+                                                                        "Error al votar",
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={
+                                                            "text-xs flex items-center gap-1 transition cursor-pointer " +
+                                                            (userVote === -1
+                                                                ? "text-red-500 font-bold"
+                                                                : "text-gray-400 hover:text-red-500")
+                                                        }
+                                                    >
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="16"
+                                                            height="16"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 16 16"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"
+                                                            />
+                                                        </svg>
                                                     </button>
-                                                    <button onClick={() => {
-                                                        if (!user) { if (window.confirm("Debes iniciar sesión para responder. ¿Ir a Login?")) navigate("/login"); return; }
-                                                        handleReplyPrompt(c.user.username || c.user.firstName);
-                                                    }} className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer">
+                                                    <button
+                                                        onClick={() => {
+                                                            if (!user) {
+                                                                if (
+                                                                    window.confirm(
+                                                                        "Debes iniciar sesión para responder. ¿Ir a Login?",
+                                                                    )
+                                                                )
+                                                                    navigate(
+                                                                        "/login",
+                                                                    );
+                                                                return;
+                                                            }
+                                                            handleReplyPrompt(
+                                                                c.user
+                                                                    .username ||
+                                                                    c.user
+                                                                        .firstName,
+                                                            );
+                                                        }}
+                                                        className="text-xs text-gray-400 hover:text-emerald-600 transition cursor-pointer"
+                                                    >
                                                         Responder
                                                     </button>
                                                     {canEditDelete && (
-                                                        <button onClick={() => {
-                                                            setEditingCommentId(c.id);
-                                                            setEditingCommentText(c.content || "");
-                                                        }} className="text-xs text-gray-400 hover:text-blue-600 transition cursor-pointer">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingCommentId(
+                                                                    c.id,
+                                                                );
+                                                                setEditingCommentText(
+                                                                    c.content ||
+                                                                        "",
+                                                                );
+                                                            }}
+                                                            className="text-xs text-gray-400 hover:text-blue-600 transition cursor-pointer"
+                                                        >
                                                             Editar
                                                         </button>
                                                     )}
-                                                    {(canEditDelete || isAdminOrCollab) && (
-                                                        <button onClick={() => handleDeleteComment(c.id)} className="text-xs text-gray-400 hover:text-red-600 transition cursor-pointer">
+                                                    {(canEditDelete ||
+                                                        isAdminOrCollab) && (
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDeleteComment(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                            className="text-xs text-gray-400 hover:text-red-600 transition cursor-pointer"
+                                                        >
                                                             Eliminar
                                                         </button>
                                                     )}
-                                                    {isAdminOrCollab && !c.flagged && (
-                                                        <button onClick={() => handleCensorComment(c.id)} className="text-xs text-orange-400 font-bold hover:text-orange-600 transition cursor-pointer">
-                                                            Censurar
-                                                        </button>
-                                                    )}
+                                                    {isAdminOrCollab &&
+                                                        !c.flagged && (
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleCensorComment(
+                                                                        c.id,
+                                                                    )
+                                                                }
+                                                                className="text-xs text-orange-400 font-bold hover:text-orange-600 transition cursor-pointer"
+                                                            >
+                                                                Censurar
+                                                            </button>
+                                                        )}
                                                 </div>
                                             </div>
                                         </div>
@@ -999,7 +1224,10 @@ export default function ReportDetail() {
                             className="flex flex-col gap-2"
                         >
                             <div className="flex gap-3">
-                                <div className="relative flex-1" ref={mentionRef}>
+                                <div
+                                    className="relative flex-1"
+                                    ref={mentionRef}
+                                >
                                     <input
                                         ref={inputRef}
                                         type="text"
@@ -1022,7 +1250,11 @@ export default function ReportDetail() {
                                                     }
                                                     className="w-full text-left px-4 py-2 hover:bg-emerald-50 flex items-center gap-2 cursor-pointer"
                                                 >
-                                                    <UserAvatar user={u} className="w-6 h-6" textClass="text-xs" />
+                                                    <UserAvatar
+                                                        user={u}
+                                                        className="w-6 h-6"
+                                                        textClass="text-xs"
+                                                    />
                                                     <div>
                                                         <div className="text-sm font-medium text-gray-900">
                                                             {u.firstName}
@@ -1067,18 +1299,36 @@ export default function ReportDetail() {
                             {commentFiles.length > 0 && (
                                 <div className="flex gap-2 items-center flex-wrap pt-2">
                                     {commentFiles.map((file, idx) => {
-                                        const isVideo = file.type.startsWith('video/');
+                                        const isVideo =
+                                            file.type.startsWith("video/");
                                         const url = URL.createObjectURL(file);
                                         return (
-                                            <div key={idx} className="relative w-16 h-16 rounded-md overflow-hidden bg-gray-900 border border-gray-200">
+                                            <div
+                                                key={idx}
+                                                className="relative w-16 h-16 rounded-md overflow-hidden bg-gray-900 border border-gray-200"
+                                            >
                                                 {isVideo ? (
-                                                    <video src={url} className="w-full h-full object-cover opacity-50" />
+                                                    <video
+                                                        src={url}
+                                                        className="w-full h-full object-cover opacity-50"
+                                                    />
                                                 ) : (
-                                                    <img src={url} className="w-full h-full object-cover" alt="preview" />
+                                                    <img
+                                                        src={url}
+                                                        className="w-full h-full object-cover"
+                                                        alt="preview"
+                                                    />
                                                 )}
                                                 <button
                                                     type="button"
-                                                    onClick={() => setCommentFiles(commentFiles.filter((_, i) => i !== idx))}
+                                                    onClick={() =>
+                                                        setCommentFiles(
+                                                            commentFiles.filter(
+                                                                (_, i) =>
+                                                                    i !== idx,
+                                                            ),
+                                                        )
+                                                    }
                                                     className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer hover:bg-red-600"
                                                     title="Eliminar"
                                                 >
@@ -1236,7 +1486,7 @@ export default function ReportDetail() {
                                 &#8249;
                             </button>
                         )}
-                        
+
                         <div className="relative max-w-[90vw] max-h-full flex items-center justify-center">
                             {lightboxMedia[lightboxIndex].type === "VIDEO" ? (
                                 <video
@@ -1252,7 +1502,7 @@ export default function ReportDetail() {
                                     className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
                                 />
                             )}
-                            
+
                             {/* Contador de imágenes */}
                             {lightboxMedia.length > 1 && (
                                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white text-sm bg-black/40 px-3 py-1 rounded-full">
@@ -1274,24 +1524,41 @@ export default function ReportDetail() {
                     {/* Footer con info del uploader estilo Komoot */}
                     {lightboxMedia[lightboxIndex].user && (
                         <div className="w-full shrink-0 h-24 flex items-center justify-center pb-6">
-                            <Link 
+                            <Link
                                 to={`/users/${lightboxMedia[lightboxIndex].user.id}`}
                                 onClick={() => setLightboxMedia(null)}
                                 className="flex items-center gap-3 hover:bg-white/5 p-2 rounded-xl transition cursor-pointer"
                             >
-                                <UserAvatar user={lightboxMedia[lightboxIndex].user} className="w-10 h-10 border border-gray-600" textClass="text-lg" fallbackBg="bg-emerald-600" fallbackText="text-white" />
+                                <UserAvatar
+                                    user={lightboxMedia[lightboxIndex].user}
+                                    className="w-10 h-10 border border-gray-600"
+                                    textClass="text-lg"
+                                    fallbackBg="bg-emerald-600"
+                                    fallbackText="text-white"
+                                />
                                 <div className="flex flex-col text-left">
                                     <span className="text-gray-300 text-sm">
                                         Foto por{" "}
                                         <span className="text-emerald-500 font-medium hover:underline transition">
-                                            {lightboxMedia[lightboxIndex].user.firstName} {lightboxMedia[lightboxIndex].user.hideLastName ? "" : lightboxMedia[lightboxIndex].user.lastName}
+                                            {
+                                                lightboxMedia[lightboxIndex]
+                                                    .user.firstName
+                                            }{" "}
+                                            {lightboxMedia[lightboxIndex].user
+                                                .hideLastName
+                                                ? ""
+                                                : lightboxMedia[lightboxIndex]
+                                                      .user.lastName}
                                         </span>
                                     </span>
                                     <span className="text-gray-500 text-xs mt-0.5">
-                                        {new Date(lightboxMedia[lightboxIndex].createdAt || Date.now()).toLocaleDateString("es-AR", {
+                                        {new Date(
+                                            lightboxMedia[lightboxIndex]
+                                                .createdAt || Date.now(),
+                                        ).toLocaleDateString("es-AR", {
                                             day: "numeric",
                                             month: "short",
-                                            year: "numeric"
+                                            year: "numeric",
                                         })}
                                     </span>
                                 </div>

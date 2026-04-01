@@ -5,7 +5,10 @@ const {
     getById,
     suggest,
 } = require("../controllers/reports.controller");
-const { authenticate, optionalAuthenticate } = require("../middlewares/auth.middleware");
+const {
+    authenticate,
+    optionalAuthenticate,
+} = require("../middlewares/auth.middleware");
 
 // PÃºblicos
 router.get("/", optionalAuthenticate, getAll);

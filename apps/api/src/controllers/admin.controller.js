@@ -8,7 +8,7 @@ const changeStatus = async (req, res) => {
             status,
             req.user.id,
             details,
-            duplicateId
+            duplicateId,
         );
         res.status(200).json({ ok: true, report });
     } catch (err) {

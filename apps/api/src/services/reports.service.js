@@ -50,31 +50,34 @@ const create = async (data, userId) => {
                 where: {
                     type: "REPORT_STATUS_CHANGED",
                     data: { path: ["reportId"], equals: report.id },
-                }
+                },
             });
 
             const { emitNotification } = require("../utils/socket");
             createdNotifs.forEach((n) => emitNotification(n));
         }
     } catch (err) {
-        console.error("Error enviando notificaciones a admins para nuevo reporte:", err);
+        console.error(
+            "Error enviando notificaciones a admins para nuevo reporte:",
+            err,
+        );
     }
 
     return report;
 };
 
 const getAll = async (filters = {}, user = null) => {
-    const { category, status, city, province, from, to } = filters;
+    const { category, status, city, province, from, to, minLat, maxLat, minLng, maxLng } = filters;
     const isMod = user && ["COLLABORATOR", "ADMIN"].includes(user.role);
 
     const where = {};
-    
+
     // Filtros por defecto si no es moderador (solo ver reportes pÃºblicos o propios)
     if (!isMod) {
         if (user) {
             where.OR = [
                 { status: { in: ["APPROVED", "IN_PROGRESS", "RESOLVED"] } },
-                { userId: user.id }
+                { userId: user.id },
             ];
         } else {
             where.status = { in: ["APPROVED", "IN_PROGRESS", "RESOLVED"] };
@@ -82,25 +85,31 @@ const getAll = async (filters = {}, user = null) => {
     }
 
     if (category) where.category = category;
-    
+
     // Si viene status en query, intersectar
     if (status) {
         const statuses = status.includes(",") ? status.split(",") : [status];
         if (!isMod && !user) {
             // Un invitado solo puede filtrar por aceptados
-            where.status = { in: statuses.filter(s => ["APPROVED", "IN_PROGRESS", "RESOLVED"].includes(s)) };
+            where.status = {
+                in: statuses.filter((s) =>
+                    ["APPROVED", "IN_PROGRESS", "RESOLVED"].includes(s),
+                ),
+            };
         } else if (!isMod && user) {
             // Usuario normal: si filtra por un status prohibido, solo le mostramos los suyos
-            const allowedStatuses = statuses.filter(s => ["APPROVED", "IN_PROGRESS", "RESOLVED"].includes(s));
+            const allowedStatuses = statuses.filter((s) =>
+                ["APPROVED", "IN_PROGRESS", "RESOLVED"].includes(s),
+            );
             if (allowedStatuses.length > 0) {
-                 where.OR = [
-                     { status: { in: allowedStatuses } },
-                     { userId: user.id, status: { in: statuses } }
-                 ];
+                where.OR = [
+                    { status: { in: allowedStatuses } },
+                    { userId: user.id, status: { in: statuses } },
+                ];
             } else {
-                 where.userId = user.id;
-                 where.status = { in: statuses };
-                 delete where.OR; // Sobrescribir el OR pÃºblico
+                where.userId = user.id;
+                where.status = { in: statuses };
+                delete where.OR; // Sobrescribir el OR pÃºblico
             }
         } else {
             // Moderador
@@ -114,6 +123,14 @@ const getAll = async (filters = {}, user = null) => {
         where.createdAt = {};
         if (from) where.createdAt.gte = new Date(from);
         if (to) where.createdAt.lte = new Date(to);
+    }
+    
+    if (minLat && maxLat) {
+        where.latitude = { gte: parseFloat(minLat), lte: parseFloat(maxLat) };
+    }
+    
+    if (minLng && maxLng) {
+        where.longitude = { gte: parseFloat(minLng), lte: parseFloat(maxLng) };
     }
 
     const reports = await prisma.report.findMany({
@@ -237,7 +254,7 @@ const getById = async (id, user = null) => {
     // Validar visibilidad si no es moderador ni el creador
     const isOwner = user && report.userId === user.id;
     const isMod = user && ["COLLABORATOR", "ADMIN"].includes(user.role);
-    
+
     if (!isOwner && !isMod) {
         if (["PENDING", "REJECTED", "DUPLICATE"].includes(report.status)) {
             const err = new Error("Reporte no disponible");

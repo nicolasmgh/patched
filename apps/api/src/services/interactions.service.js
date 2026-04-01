@@ -25,6 +25,36 @@ const confirm = async (reportId, userId) => {
         });
     }
 
+    const confirmationCount = await prisma.confirmation.count({
+        where: { reportId }
+    });
+
+    // Auto-aprobación estilo Waze
+    if (report.status === "PENDING" && confirmationCount >= 10) {
+        await prisma.report.update({
+            where: { id: reportId },
+            data: { status: "APPROVED" }
+        });
+        
+        await prisma.media.updateMany({
+            where: { reportId, status: "PENDING" },
+            data: { status: "APPROVED" }
+        });
+
+        if (report.userId) {
+            const notif = await prisma.notification.create({
+                data: {
+                    userId: report.userId,
+                    type: "REPORT_APPROVED",
+                    message: `¡Tu reporte "${report.title}" alcanzó las 10 confirmaciones y fue auto-aprobado por la comunidad!`,
+                    data: { reportId, status: "APPROVED" },
+                }
+            });
+            const { emitNotification } = require("../utils/socket");
+            emitNotification(notif);
+        }
+    }
+
     return confirmation;
 };
 
