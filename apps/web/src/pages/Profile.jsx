@@ -593,13 +593,13 @@ export default function Profile() {
                                 <div
                                     key={n.id}
                                     onClick={() => {
-                                        if (n.data?.reportId) {
+                                        if (n.data?.reportId && n.data?.status !== "REJECTED" && n.type !== "REPORT_REJECTED") {
                                             navigate(
                                                 `/reports/${n.data.reportId}`,
                                             );
                                         }
                                     }}
-                                    className={`bg-white rounded-xl border px-4 py-3 text-sm ${n.data?.reportId ? "cursor-pointer hover:border-emerald-300 transition" : ""} ${
+                                    className={`bg-white rounded-xl border px-4 py-3 text-sm ${n.data?.reportId && n.data?.status !== "REJECTED" && n.type !== "REPORT_REJECTED" ? "cursor-pointer hover:border-emerald-300 transition" : ""} ${
                                         n.read
                                             ? "border-gray-200 text-gray-500"
                                             : "border-emerald-200 text-gray-800 font-medium"

@@ -120,6 +120,9 @@ const updateMediaStatus = async (req, res) => {
         );
         res.status(200).json({ ok: true, media });
     } catch (err) {
+        if (err.statusCode) {
+            return res.status(err.statusCode).json({ ok: false, message: err.message });
+        }
         res.status(400).json({ ok: false, message: err.message });
     }
 };

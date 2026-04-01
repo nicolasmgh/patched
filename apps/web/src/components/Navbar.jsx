@@ -12,6 +12,15 @@ export default function Navbar() {
     const [hasSeenNotifs, setHasSeenNotifs] = useState(false);
     const dropRef = useRef(null);
 
+    const fetchNotifications = async () => {
+        try {
+            const res = await api.get("/users/me/notifications");
+            setNotifications(res.data.notifications);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         if (user) {
             fetchNotifications();
@@ -70,15 +79,6 @@ export default function Navbar() {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const fetchNotifications = async () => {
-        try {
-            const res = await api.get("/users/me/notifications");
-            setNotifications(res.data.notifications);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     const handleMarkRead = async () => {
         try {
             await api.patch("/users/me/notifications/read");
@@ -99,7 +99,7 @@ export default function Navbar() {
             }
         }
 
-        if (n.data?.reportId) {
+        if (n.data?.reportId && n.data?.status !== "REJECTED" && n.type !== "REPORT_REJECTED") {
             let hash = "";
             if (n.data?.commentId) hash = `#comment-${n.data.commentId}`;
             navigate(`/reports/${n.data.reportId}${hash}`);

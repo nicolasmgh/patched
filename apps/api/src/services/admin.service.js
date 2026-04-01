@@ -39,6 +39,24 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
         data,
     });
 
+    if (status === "REJECTED") {
+        const mediasToReject = await prisma.media.findMany({
+            where: { reportId }
+        });
+
+        for (const m of mediasToReject) {
+            try {
+                const filePath = path.join(__dirname, "../../", m.url);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (err) {
+                console.error("Error al eliminar archivo físico:", err);
+            }
+        }
+        await prisma.media.deleteMany({ where: { reportId } });
+    }
+
     // Log de la acción
     await prisma.actionLog.create({
         data: {
@@ -87,7 +105,7 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
                 message,
                 userId: report.userId,
                 data: {
-                    reportId,
+                    ...(status !== "REJECTED" && { reportId }),
                     status
                 }
             },
@@ -425,7 +443,20 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
         },
     });
 
-    if (!media) throw new Error("Media no encontrada");
+    if (!media) {
+        const err = new Error("Media no encontrada");
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (status === "APPROVED") {
+        const hasReport = media.report || media.comment?.report;
+        if (!hasReport) {
+            const err = new Error("El reporte asociado a esta imagen ya no existe");
+            err.statusCode = 404;
+            throw err;
+        }
+    }
 
     // Determinar el dueño del medio, el dueño del reporte y el título del reporte
     const uploaderId = media.userId;

@@ -182,7 +182,10 @@ export default function Admin() {
             });
             fetchPendingMedia();
         } catch (err) {
-            alert("Error al actualizar la moderación");
+            if (err.response?.status === 404) {
+                return navigate("/404");
+            }
+            alert(err.response?.data?.message || "Error al actualizar la moderación");
         }
     };
 
@@ -216,7 +219,7 @@ export default function Admin() {
             });
             fetchSuggestions();
             fetchUsers(); // por las dudas
-        } catch (err) {
+        } catch {
             alert("Error al actualizar sugerencia");
         }
     };
@@ -228,7 +231,7 @@ export default function Admin() {
             });
             fetchSuggestions();
             fetchUsers();
-        } catch (err) {
+        } catch {
             alert("Error al actualizar sugerencia");
         }
     };

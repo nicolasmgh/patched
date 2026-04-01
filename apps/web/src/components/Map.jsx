@@ -126,7 +126,6 @@ export default function Map({
     center = [-34.4198, -58.7293],
     onReportClick = null,
     onBoundsChange = null,
-    suggestReport = false,
     onMarkerDragEnd = null,
     selectedReportId = null,
 }) {
