@@ -37,7 +37,7 @@ const {
     getPublicProfile,
     search,
 } = require("../controllers/users.controller");
-const { authenticate } = require("../middlewares/auth.middleware");
+const { authenticate, optionalAuthenticate } = require("../middlewares/auth.middleware");
 
 router.get("/me", authenticate, getMyProfile);
 router.patch("/me", authenticate, uploader.single("avatar"), updateMyProfile);
@@ -45,6 +45,6 @@ router.get("/me/notifications", authenticate, getNotifications);
 router.patch("/me/notifications/read", authenticate, markNotificationsRead);
 router.patch("/me/notifications/:id/read", authenticate, markNotificationRead);
 router.get("/search", search);
-router.get("/:userId", getPublicProfile);
+router.get("/:userId", optionalAuthenticate, getPublicProfile);
 
 module.exports = router;

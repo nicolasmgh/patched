@@ -62,7 +62,7 @@ const markNotificationRead = async (req, res) => {
 
 const getPublicProfile = async (req, res) => {
     try {
-        const user = await usersService.getPublicProfile(req.params.userId);
+        const user = await usersService.getPublicProfile(req.params.userId, req.user);
         res.status(200).json({ ok: true, user });
     } catch (err) {
         res.status(404).json({ ok: false, message: err.message });

@@ -96,8 +96,26 @@ const markNotificationsRead = async (userId) => {
     return { updated: true };
 };
 
-const getPublicProfile = async (identifier) => {
+const getPublicProfile = async (identifier, requestingUser) => {
     const isId = identifier.length === 36;
+
+    // Primero verificamos si es admin o el dueÃ±o para ver los pendientes
+    let statusFilter = { not: "REJECTED" };
+    
+    // Para saber si es el dueÃ±o necesitamos el ID real
+    let targetUserId = identifier;
+    if (!isId) {
+        const u = await prisma.user.findUnique({ where: { username: identifier }, select: { id: true } });
+        if (u) targetUserId = u.id;
+    }
+
+    const isAdmin = requestingUser && ["ADMIN", "COLLABORATOR"].includes(requestingUser.role);
+    const isOwner = requestingUser && requestingUser.id === targetUserId;
+
+    if (!isAdmin && !isOwner) {
+        // Personas normales o sin login solo ven reportes aceptados/activos/resueltos
+        statusFilter = { in: ["APPROVED", "IN_PROGRESS", "RESOLVED"] };
+    }
 
     const user = await prisma.user.findFirst({
         where: isId ? { id: identifier } : { username: identifier },
@@ -112,7 +130,7 @@ const getPublicProfile = async (identifier) => {
             createdAt: true,
             badges: { include: { badge: true } },
             reports: {
-                where: { status: { not: "REJECTED" } },
+                where: { status: statusFilter },
                 orderBy: { createdAt: "desc" },
                 take: 10,
                 select: {
