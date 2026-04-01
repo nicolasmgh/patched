@@ -1,5 +1,7 @@
 const router = require("express").Router();
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 const path = require("path");
 const {
     upload,
@@ -8,20 +10,31 @@ const {
 } = require("../controllers/media.controller");
 const { authenticate } = require("../middlewares/auth.middleware");
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/");
-    },
-    filename: (req, file, cb) => {
-        const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        cb(null, `${unique}${path.extname(file.originalname)}`);
+// Configurar Cloudinary (Gratuito)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Guardar en la nube en lugar del disco duro
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        const isVideo = file.mimetype.startsWith("video/");
+        return {
+            folder: "patched_uploads",
+            resource_type: isVideo ? "video" : "image",
+            allowed_formats: ["jpg", "jpeg", "png", "webp", "mp4"],
+            public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+        };
     },
 });
 
 const fileFilter = (req, file, cb) => {
     const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".mp4"];
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedExtensions.includes(ext)) {
+    if (allowedExtensions.includes(ext) || file.mimetype.startsWith('video/')) {
         cb(null, true);
     } else {
         cb(new Error("Formato no permitido. Solo JPG, PNG, WEBP o MP4"), false);

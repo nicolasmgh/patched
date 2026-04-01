@@ -215,12 +215,12 @@ export default function AdminReport() {
                                 {generalPhotos.map((m) => (
                                     <div key={m.id} className="relative group">
                                         <a
-                                            href={`http://localhost:3000${m.url}`}
+                                            href={`${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
                                             target="_blank"
                                             rel="noreferrer"
                                         >
                                             <img
-                                                src={`http://localhost:3000${m.url}`}
+                                                src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
                                                 className="h-20 w-20 object-cover rounded-lg"
                                                 alt="foto"
                                             />
@@ -258,12 +258,12 @@ export default function AdminReport() {
                             {afterPhotos.map((m) => (
                                 <div key={m.id} className="relative group">
                                     <a
-                                        href={`http://localhost:3000${m.url}`}
+                                        href={`${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
                                         target="_blank"
                                         rel="noreferrer"
                                     >
                                         <img
-                                            src={`http://localhost:3000${m.url}`}
+                                            src={`x${import.meta.env.VITE_API_URL.replace("/api", "")}${m.url}`}
                                             className="h-20 w-20 object-cover rounded-lg"
                                             alt="después"
                                         />

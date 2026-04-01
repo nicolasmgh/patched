@@ -18,7 +18,7 @@ export default function UserAvatar({
             user.avatarUrl.startsWith("http") ||
             user.avatarUrl.startsWith("blob:")
                 ? user.avatarUrl
-                : `http://localhost:3000${user.avatarUrl}`;
+                : `${user.avatarUrl}`;
         return (
             <img
                 src={url}

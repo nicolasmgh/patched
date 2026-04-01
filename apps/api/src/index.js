@@ -9,10 +9,25 @@ const io = require("./utils/socket").init(server);
 
 const PORT = process.env.PORT || 3000;
 
-// Middlewares globales
-app.use(cors());
+// Configuración CORS estricta (Solo URLs de frontend predefinidas o locales)
+const allowedOrigins = process.env.FRONTEND_URL 
+    ? [process.env.FRONTEND_URL, "http://localhost:5173"] 
+    : ["http://localhost:5173"];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("No permitido por CORS."));
+        }
+    },
+    credentials: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Las fotos ahora van por Cloudinary, pero conservamos esto por si quedó alguna foto vieja
 app.use("/uploads", express.static("uploads"));
 
 // Rate limiter general y restrictivo para reportes (Anti-Abuso)

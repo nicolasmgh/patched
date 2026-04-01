@@ -13,7 +13,8 @@ const attachToReport = async (
 
     const media = await Promise.all(
         files.map((file) => {
-            const url = `/uploads/${file.filename}`;
+            // file.path ahora contiene la URL gratuita en la nube de Cloudinary en lugar de una ruta local
+            const url = file.path; 
             return prisma.media.create({
                 data: {
                     url,
@@ -73,7 +74,7 @@ const attachToComment = async (commentId, files, userId) => {
 
     const media = await Promise.all(
         files.map((file) => {
-            const url = `/uploads/${file.filename}`;
+            const url = file.path;
             return prisma.media.create({
                 data: {
                     url,
@@ -129,21 +130,16 @@ const deleteMedia = async (mediaId, userId, userRole) => {
 
     if (!media) throw new Error("Media no encontrada");
 
-    // Solo el dueÃ±o del reporte o admin/colaborador puede borrar
+    // Solo el dueño del reporte o admin/colaborador puede borrar
     const isOwner = media.report.userId === userId;
     const isPrivileged = ["ADMIN", "COLLABORATOR"].includes(userRole);
 
     if (!isOwner && !isPrivileged) {
-        throw new Error("No tenÃ©s permisos para eliminar esta media");
+        throw new Error("No tenés permisos para eliminar esta media");
     }
 
-    // Borrar archivo fÃ­sico
-    const filePath = path.join(
-        __dirname,
-        "../../uploads",
-        path.basename(media.url),
-    );
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    // Opcional: Para Cloudinary, si quisiéramos borrar el archivo físico usaríamos 
+    // su API: cloudinary.uploader.destroy(public_id). Pero podemos dejar solo el borrado lógico en db como alternativa segura.
 
     await prisma.media.delete({ where: { id: mediaId } });
 
