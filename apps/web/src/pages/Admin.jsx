@@ -185,7 +185,10 @@ export default function Admin() {
             if (err.response?.status === 404) {
                 return navigate("/404");
             }
-            alert(err.response?.data?.message || "Error al actualizar la moderación");
+            alert(
+                err.response?.data?.message ||
+                    "Error al actualizar la moderación",
+            );
         }
     };
 

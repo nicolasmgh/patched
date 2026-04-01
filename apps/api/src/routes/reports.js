@@ -5,11 +5,11 @@ const {
     getById,
     suggest,
 } = require("../controllers/reports.controller");
-const { authenticate } = require("../middlewares/auth.middleware");
+const { authenticate, optionalAuthenticate } = require("../middlewares/auth.middleware");
 
-// Públicos
-router.get("/", getAll);
-router.get("/:id", getById);
+// PÃºblicos
+router.get("/", optionalAuthenticate, getAll);
+router.get("/:id", optionalAuthenticate, getById);
 
 // Requieren login
 router.post("/", authenticate, create);

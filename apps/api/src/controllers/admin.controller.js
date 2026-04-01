@@ -2,12 +2,13 @@ const adminService = require("../services/admin.service");
 
 const changeStatus = async (req, res) => {
     try {
-        const { status, details } = req.body;
+        const { status, details, duplicateId } = req.body;
         const report = await adminService.changeStatus(
             req.params.reportId,
             status,
             req.user.id,
             details,
+            duplicateId
         );
         res.status(200).json({ ok: true, report });
     } catch (err) {
@@ -121,7 +122,9 @@ const updateMediaStatus = async (req, res) => {
         res.status(200).json({ ok: true, media });
     } catch (err) {
         if (err.statusCode) {
-            return res.status(err.statusCode).json({ ok: false, message: err.message });
+            return res
+                .status(err.statusCode)
+                .json({ ok: false, message: err.message });
         }
         res.status(400).json({ ok: false, message: err.message });
     }

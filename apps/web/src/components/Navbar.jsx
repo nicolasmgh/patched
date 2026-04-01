@@ -99,10 +99,23 @@ export default function Navbar() {
             }
         }
 
-        if (n.data?.reportId && n.data?.status !== "REJECTED" && n.type !== "REPORT_REJECTED") {
+        if (
+            n.data?.reportId &&
+            n.data?.status !== "REJECTED" &&
+            n.type !== "REPORT_REJECTED"
+        ) {
             let hash = "";
             if (n.data?.commentId) hash = `#comment-${n.data.commentId}`;
-            navigate(`/reports/${n.data.reportId}${hash}`);
+            
+            // if admin/collab and it's a pending moderation notification, go to admin panel
+            if (
+                ["ADMIN", "COLLABORATOR"].includes(user?.role) && 
+                n.data?.status === "PENDING"
+            ) {
+                navigate(`/admin/reports/${n.data.reportId}`);
+            } else {
+                navigate(`/reports/${n.data.reportId}${hash}`);
+            }
             setShowNotif(false);
         }
     };

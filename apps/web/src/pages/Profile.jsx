@@ -593,10 +593,19 @@ export default function Profile() {
                                 <div
                                     key={n.id}
                                     onClick={() => {
-                                        if (n.data?.reportId && n.data?.status !== "REJECTED" && n.type !== "REPORT_REJECTED") {
-                                            navigate(
-                                                `/reports/${n.data.reportId}`,
-                                            );
+                                        if (
+                                            n.data?.reportId &&
+                                            n.data?.status !== "REJECTED" &&
+                                            n.type !== "REPORT_REJECTED"
+                                        ) {
+                                            if (
+                                                ["ADMIN", "COLLABORATOR"].includes(user?.role) && 
+                                                n.data?.status === "PENDING"
+                                            ) {
+                                                navigate(`/admin/reports/${n.data.reportId}`);
+                                            } else {
+                                                navigate(`/reports/${n.data.reportId}`);
+                                            }
                                         }
                                     }}
                                     className={`bg-white rounded-xl border px-4 py-3 text-sm ${n.data?.reportId && n.data?.status !== "REJECTED" && n.type !== "REPORT_REJECTED" ? "cursor-pointer hover:border-emerald-300 transition" : ""} ${

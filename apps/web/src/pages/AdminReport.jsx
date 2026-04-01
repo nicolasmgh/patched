@@ -60,12 +60,23 @@ export default function AdminReport() {
             alert("Debes ingresar un motivo de justificación para rechazar el reporte.");
             return;
         }
+        
+        let origId = undefined;
+        if (status === "DUPLICATE") {
+            origId = window.prompt("Ingresa el ID del reporte original/existente al que se unificará este:");
+            if (origId === null) return;
+            if (!origId.trim()) {
+                alert("Debes ingresar un ID de reporte válido para poder duplicar.");
+                return;
+            }
+            origId = origId.trim();
+        }
 
         if (!window.confirm(`¿Cambiar estado a "${STATUS_LABELS[status]}"?`))
             return;
         setSubmitting(true);
         try {
-            await api.patch(`/admin/reports/${id}/status`, { status, details });
+            await api.patch(`/admin/reports/${id}/status`, { status, details, duplicateId: origId });
             await fetchReport();
             setDetails("");
         } catch (err) {
@@ -91,6 +102,16 @@ export default function AdminReport() {
             alert(err.response?.data?.message || "Error");
         } finally {
             setUploadingAfter(false);
+        }
+    };
+
+    const handleDeleteMedia = async (mediaId) => {
+        if (!window.confirm("¿Estás seguro de que quieres eliminar esta imagen/video permanentemente?")) return;
+        try {
+            await api.delete(`/media/${mediaId}`);
+            await fetchReport();
+        } catch (err) {
+            alert(err.response?.data?.message || "Error al eliminar multimedia");
         }
     };
 
@@ -135,9 +156,16 @@ export default function AdminReport() {
                         <h1 className="text-xl font-bold text-gray-900">
                             {report.title}
                         </h1>
-                        <span className="text-sm px-3 py-1 rounded-full font-medium bg-gray-100 text-gray-700 shrink-0">
-                            {STATUS_LABELS[report.status]}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                            <span className="text-sm px-3 py-1 rounded-full font-medium bg-gray-100 text-gray-700 shrink-0">
+                                {STATUS_LABELS[report.status]}
+                            </span>
+                            {report.status === "DUPLICATE" && report.duplicateId && (
+                                <Link to={`/admin/reports/${report.duplicateId}`} className="text-xs text-blue-500 hover:underline">
+                                    Ver original ({report.duplicateId.slice(0,8)}...)
+                                </Link>
+                            )}
+                        </div>
                     </div>
                     <p className="text-sm text-gray-500 mb-2">
                         {report.description}
@@ -163,18 +191,26 @@ export default function AdminReport() {
                             </p>
                             <div className="flex gap-2 flex-wrap">
                                 {generalPhotos.map((m) => (
-                                    <a
-                                        key={m.id}
-                                        href={`http://localhost:3000${m.url}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        <img
-                                            src={`http://localhost:3000${m.url}`}
-                                            className="h-20 w-20 object-cover rounded-lg"
-                                            alt="foto"
-                                        />
-                                    </a>
+                                    <div key={m.id} className="relative group">
+                                        <a
+                                            href={`http://localhost:3000${m.url}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            <img
+                                                src={`http://localhost:3000${m.url}`}
+                                                className="h-20 w-20 object-cover rounded-lg"
+                                                alt="foto"
+                                            />
+                                        </a>
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMedia(m.id); }}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Eliminar imagen"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -194,18 +230,26 @@ export default function AdminReport() {
                     {afterPhotos.length > 0 ? (
                         <div className="flex gap-2 flex-wrap mb-3">
                             {afterPhotos.map((m) => (
-                                <a
-                                    key={m.id}
-                                    href={`http://localhost:3000${m.url}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    <img
-                                        src={`http://localhost:3000${m.url}`}
-                                        className="h-20 w-20 object-cover rounded-lg"
-                                        alt="después"
-                                    />
-                                </a>
+                                <div key={m.id} className="relative group">
+                                    <a
+                                        href={`http://localhost:3000${m.url}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <img
+                                            src={`http://localhost:3000${m.url}`}
+                                            className="h-20 w-20 object-cover rounded-lg"
+                                            alt="después"
+                                        />
+                                    </a>
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteMedia(m.id); }}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Eliminar imagen"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     ) : (

@@ -126,6 +126,7 @@ model Report {
   category    Category
   urgency     Urgency   @default(LOW)
   status      Status    @default(PENDING)
+  duplicateId String?
   latitude    Float
   longitude   Float
   address     String?

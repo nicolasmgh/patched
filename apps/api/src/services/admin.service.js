@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../utils/prisma");
 
-const changeStatus = async (reportId, status, adminId, details = null) => {
+const changeStatus = async (reportId, status, adminId, details = null, duplicateId = null) => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report) throw new Error("Reporte no encontrado");
 
@@ -33,6 +33,25 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
 
     const data = { status };
     if (status === "RESOLVED") data.resolvedAt = new Date();
+    
+    if (status === "DUPLICATE") {
+        if (!duplicateId) throw new Error("Debes ingresar el ID del reporte original.");
+        const originalReport = await prisma.report.findUnique({
+            where: { id: duplicateId },
+        });
+        if (!originalReport) {
+            throw new Error("El reporte original indicado no existe.");
+        }
+        data.duplicateId = duplicateId;
+        
+        // Transfer images to original report
+        await prisma.media.updateMany({
+            where: { reportId },
+            data: { reportId: duplicateId },
+        });
+    } else if (status === "PENDING" && report.status === "DUPLICATE") {
+        data.duplicateId = null;
+    }
 
     const updated = await prisma.report.update({
         where: { id: reportId },
@@ -41,7 +60,7 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
 
     if (status === "REJECTED") {
         const mediasToReject = await prisma.media.findMany({
-            where: { reportId }
+            where: { reportId },
         });
 
         for (const m of mediasToReject) {
@@ -67,7 +86,13 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
         },
     });
 
-    // Reputación al dueño si se aprueba o resuelve
+    if (status === "APPROVED") {
+        await prisma.media.updateMany({
+            where: { reportId, status: "PENDING" },
+            data: { status: "APPROVED" }
+        });
+    }
+
     if (report.userId) {
         if (status === "APPROVED") {
             await prisma.user.update({
@@ -97,8 +122,10 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
         let message = `Tu reporte "${report.title}" cambió de estado a ${status}.`;
         if (status === "REJECTED" && details) {
             message += ` Motivo: ${details}`;
+        } else if (status === "DUPLICATE" && duplicateId) {
+            message += ` Motivo: Ya existía otro reporte igual creado (ID: ${duplicateId}). Las fotos fueron movidas a ese reporte.`;
         }
-        
+
         const notif = await prisma.notification.create({
             data: {
                 type: "REPORT_STATUS_CHANGED",
@@ -106,8 +133,8 @@ const changeStatus = async (reportId, status, adminId, details = null) => {
                 userId: report.userId,
                 data: {
                     ...(status !== "REJECTED" && { reportId }),
-                    status
-                }
+                    status,
+                },
             },
         });
 
@@ -386,7 +413,19 @@ const updateSuggestionStatus = async (suggestionId, status) => {
 
 const getPendingMedia = async () => {
     return prisma.media.findMany({
-        where: { status: "PENDING" },
+        where: {
+            status: "PENDING",
+            OR: [
+                {
+                    reportId: { not: null },
+                    report: { status: { notIn: ["PENDING", "REJECTED", "DUPLICATE"] } }
+                },
+                {
+                    commentId: { not: null },
+                    comment: { report: { status: { notIn: ["PENDING", "REJECTED", "DUPLICATE"] } } }
+                }
+            ]
+        },
         orderBy: { createdAt: "desc" },
         include: {
             user: {
@@ -452,7 +491,9 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
     if (status === "APPROVED") {
         const hasReport = media.report || media.comment?.report;
         if (!hasReport) {
-            const err = new Error("El reporte asociado a esta imagen ya no existe");
+            const err = new Error(
+                "El reporte asociado a esta imagen ya no existe",
+            );
             err.statusCode = 404;
             throw err;
         }
