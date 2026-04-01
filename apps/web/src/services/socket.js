@@ -9,6 +9,7 @@ export const socket = io(SOCKET_URL, {
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
     withCredentials: true,
+    transports: ["websocket"], // Forzar websocket nativo para que Render no tire Timeouts en Polling
 });
 
 socket.on("connect", () => {
