@@ -1,0 +1,5 @@
+﻿const fs=require('fs'); 
+let t=fs.readFileSync('apps/web/src/pages/ReportDetail.jsx', 'utf8'); 
+const repl = '{editingCommentId === c.id ? (<div className="flex flex-col gap-2 mt-1 mb-2"><textarea value={editingCommentText} onChange={e => setEditingCommentText(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" rows={2} /><div className="flex gap-2 justify-end"><button onClick={() => setEditingCommentId(null)} className="text-xs text-gray-500 hover:underline cursor-pointer">Cancelar</button><button onClick={() => handleEditCommentSubmit(c.id)} className="text-xs text-emerald-600 font-medium hover:underline cursor-pointer">Guardar</button></div></div>) : (<p className={`text-sm whitespace-pre-wrap ${c.flagged ? "text-orange-700 font-medium italic" : "text-gray-600"}`}>{c.flagged ? c.content : parseMentions(c.content)}</p>)}';
+t = t.replace(/<p className="text-sm text-gray-600 whitespace-pre-wrap">\s*\{parseMentions\(c\.content\)\}\s*<\/p>/g, repl); 
+fs.writeFileSync('apps/web/src/pages/ReportDetail.jsx', t);

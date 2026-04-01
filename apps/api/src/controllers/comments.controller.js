@@ -39,4 +39,29 @@ const flag = async (req, res) => {
     }
 };
 
-module.exports = { create, remove, flag };
+const edit = async (req, res) => {
+    try {
+        const comment = await commentsService.edit(
+            req.params.commentId,
+            req.user.id,
+            req.body.content
+        );
+        res.status(200).json({ ok: true, comment });
+    } catch (err) {
+        res.status(403).json({ ok: false, message: err.message });
+    }
+};
+
+const censor = async (req, res) => {
+    try {
+        const comment = await commentsService.censor(
+            req.params.commentId,
+            req.user.role
+        );
+        res.status(200).json({ ok: true, comment });
+    } catch (err) {
+        res.status(403).json({ ok: false, message: err.message });
+    }
+};
+
+module.exports = { create, remove, flag, edit, censor };

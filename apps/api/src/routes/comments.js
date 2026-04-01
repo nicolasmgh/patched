@@ -1,9 +1,16 @@
 const router = require("express").Router();
-const { create, remove, flag } = require("../controllers/comments.controller");
-const { authenticate, authorize } = require("../middlewares/auth.middleware");
+const { create, remove, flag, edit, censor } = require("../controllers/comments.controller"); 
+const { authenticate, authorize } = require("../middlewares/auth.middleware");  
 
 router.post("/:reportId", authenticate, create);
 router.delete("/:commentId", authenticate, remove);
+router.put("/:commentId", authenticate, edit);
+router.patch(
+    "/censor/:commentId",
+    authenticate,
+    authorize("ADMIN", "COLLABORATOR"),
+    censor,
+);
 router.patch(
     "/flag/:commentId",
     authenticate,
