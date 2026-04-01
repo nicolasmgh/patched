@@ -19,10 +19,10 @@ export default defineConfig({
                 theme_color: "#059669",
                 background_color: "#f9fafb",
                 display: "standalone",
-                start_url: "/",
+                start_url: "/patched/",
                 icons: [
                     {
-                        src: "/icon.svg",
+                        src: "icon.svg",
                         sizes: "any",
                         type: "image/svg+xml",
                         purpose: "any maskable",
