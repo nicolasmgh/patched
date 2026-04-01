@@ -314,12 +314,22 @@ export default function Profile() {
                                         </div>
                                         <div className="flex gap-4 mt-2 text-sm text-gray-600">
                                             <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg min-w-[80px]">
-                                                <span className="font-bold text-emerald-600">{profile?._count?.reports || 0}</span>
-                                                <span className="text-xs">Reportes</span>
+                                                <span className="font-bold text-emerald-600">
+                                                    {profile?._count?.reports ||
+                                                        0}
+                                                </span>
+                                                <span className="text-xs">
+                                                    Reportes
+                                                </span>
                                             </div>
                                             <div className="flex flex-col items-center p-2 bg-gray-50 rounded-lg min-w-[80px]">
-                                                <span className="font-bold text-blue-600">{profile?._count?.confirmations || 0}</span>
-                                                <span className="text-xs">Validaciones</span>
+                                                <span className="font-bold text-blue-600">
+                                                    {profile?._count
+                                                        ?.confirmations || 0}
+                                                </span>
+                                                <span className="text-xs">
+                                                    Validaciones
+                                                </span>
                                             </div>
                                         </div>
                                     </>
@@ -429,38 +439,69 @@ export default function Profile() {
                                 </Link>
                             </div>
                         ) : (
-                            profile?.reports?.map((r) => (
-                                <Link
-                                    key={r.id}
-                                    to={`/reports/${r.id}`}
-                                    className="bg-white rounded-2xl border border-gray-200 p-4 hover:border-emerald-300 transition flex items-start justify-between gap-4"
-                                >
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-800">
-                                            {r.title}
-                                        </p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {CATEGORY_LABELS[r.category]} ·{" "}
-                                            {new Date(
-                                                r.createdAt,
-                                            ).toLocaleDateString("es-AR")}
-                                        </p>
-                                        <div className="flex gap-3 mt-2 text-xs text-gray-400">
-                                            <span>
-                                                ✓ {r._count.confirmations}
-                                            </span>
-                                            <span>💬 {r._count.comments}</span>
+                            profile?.reports?.map((r) => {
+                                const isAccessible =
+                                    [
+                                        "APPROVED",
+                                        "IN_PROGRESS",
+                                        "RESOLVED",
+                                    ].includes(r.status) ||
+                                    (user &&
+                                        ["ADMIN", "COLLABORATOR"].includes(
+                                            user.role,
+                                        ));
+                                const wrapperClass =
+                                    "bg-white rounded-2xl border border-gray-200 p-4 transition flex items-start justify-between gap-4 " +
+                                    (isAccessible
+                                        ? "hover:border-emerald-300 cursor-pointer"
+                                        : "opacity-80");
+
+                                const content = (
+                                    <>
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                {r.title}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                {CATEGORY_LABELS[r.category]} ·{" "}
+                                                {new Date(
+                                                    r.createdAt,
+                                                ).toLocaleDateString("es-AR")}
+                                            </p>
+                                            <div className="flex gap-3 mt-2 text-xs text-gray-400">
+                                                <span>
+                                                    ✓ {r._count.confirmations}
+                                                </span>
+                                                <span>
+                                                    💬 {r._count.comments}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
                                         <span
                                             className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[r.status]}`}
                                         >
                                             {STATUS_LABELS[r.status]}
                                         </span>
-                                    )}
-                                </Link>
-                            ))
+                                    </>
+                                );
+
+                                if (isAccessible) {
+                                    return (
+                                        <Link
+                                            key={r.id}
+                                            to={`/reports/${r.id}`}
+                                            className={wrapperClass}
+                                        >
+                                            {content}
+                                        </Link>
+                                    );
+                                }
+                                return (
+                                    <div key={r.id} className={wrapperClass}>
+                                        {content}
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
                 )}

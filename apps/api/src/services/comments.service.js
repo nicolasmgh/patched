@@ -45,8 +45,11 @@ const create = async (reportId, userId, { content }) => {
                             data: {
                                 reportId,
                                 commentId: comment.id,
-                                preview: content.length > 50 ? content.substring(0, 50) + "..." : content
-                            }
+                                preview:
+                                    content.length > 50
+                                        ? content.substring(0, 50) + "..."
+                                        : content,
+                            },
                         },
                     });
                     const { emitNotification } = require("../utils/socket");
@@ -71,12 +74,30 @@ const create = async (reportId, userId, { content }) => {
         data: { reputation: { increment: 1 } },
     });
 
+    const commentsCount = await prisma.comment.count({
+        where: { userId, flagged: false },
+    });
+    if (commentsCount === 5) {
+        const b = await prisma.badge.findUnique({
+            where: { name: "RESEÑADOR_EXPERTO" },
+        });
+        if (b) {
+            await prisma.userBadge
+                .upsert({
+                    where: { userId_badgeId: { userId, badgeId: b.id } },
+                    update: {},
+                    create: { userId, badgeId: b.id },
+                })
+                .catch(() => {});
+        }
+    }
+
     if (comment.user.hideLastName) comment.user.lastName = null;
 
     try {
         console.log("Emitiendo evento commentAdded para reporte:", reportId);
         getIO().emit("commentAdded", comment);
-    } catch(e) {
+    } catch (e) {
         console.error("Error al emitir commentAdded:", e.message);
     }
 
@@ -95,11 +116,13 @@ const remove = async (commentId, userId, userRole) => {
     if (!isOwner && !isPrivileged) {
         throw new Error("No tenés permisos para eliminar este comentario");
     }
-    
+
     if (isOwner && !isPrivileged) {
         const timeDiff = (new Date() - new Date(comment.createdAt)) / 1000 / 60;
         if (timeDiff > 5) {
-            throw new Error("Solo podés eliminar tu comentario dentro de los primeros 5 minutos");
+            throw new Error(
+                "Solo podés eliminar tu comentario dentro de los primeros 5 minutos",
+            );
         }
     }
 
@@ -109,23 +132,32 @@ const remove = async (commentId, userId, userRole) => {
 };
 
 const edit = async (commentId, userId, newContent) => {
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+    });
     if (!comment) throw new Error("Comentario no encontrado");
-    
-    if (comment.userId !== userId) throw new Error("Solo podés editar tus propios comentarios");
-    if (!newContent?.trim()) throw new Error("El comentario no puede estar vacío");
+
+    if (comment.userId !== userId)
+        throw new Error("Solo podés editar tus propios comentarios");
+    if (!newContent?.trim())
+        throw new Error("El comentario no puede estar vacío");
 
     const timeDiff = (new Date() - new Date(comment.createdAt)) / 1000 / 60;
-    if (timeDiff > 5) throw new Error("Solo podés editar tu comentario dentro de los primeros 5 minutos");
+    if (timeDiff > 5)
+        throw new Error(
+            "Solo podés editar tu comentario dentro de los primeros 5 minutos",
+        );
 
     return await prisma.comment.update({
         where: { id: commentId },
-        data: { content: newContent.trim() }
+        data: { content: newContent.trim() },
     });
 };
 
 const censor = async (commentId, userRole) => {
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+    });
     if (!comment) throw new Error("Comentario no encontrado");
 
     if (!["ADMIN", "COLLABORATOR"].includes(userRole)) {
@@ -134,10 +166,10 @@ const censor = async (commentId, userRole) => {
 
     return await prisma.comment.update({
         where: { id: commentId },
-        data: { 
+        data: {
             content: "[Comentario censurado por moderación]",
-            flagged: true 
-        }
+            flagged: true,
+        },
     });
 };
 

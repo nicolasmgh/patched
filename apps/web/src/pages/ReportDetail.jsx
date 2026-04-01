@@ -519,13 +519,14 @@ export default function ReportDetail() {
                                 </div>
                             )}
                         </div>
-                        {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
-                            <span
-                                className={`text-sm px-3 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[report.status]}`}
-                            >
-                                {STATUS_LABELS[report.status]}
-                            </span>
-                        )}
+                        {user &&
+                            ["ADMIN", "COLLABORATOR"].includes(user.role) && (
+                                <span
+                                    className={`text-sm px-3 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[report.status]}`}
+                                >
+                                    {STATUS_LABELS[report.status]}
+                                </span>
+                            )}
                     </div>
                     <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
                         <span>

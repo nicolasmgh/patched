@@ -17,7 +17,13 @@ const confirm = async (reportId, userId) => {
         data: { reportId, userId },
     });
 
-    // Sumar reputaciÃ³n al dueÃ±o del reporte
+    // Sumar reputación al que confirma (el usuario gana 1 pto)
+    await prisma.user.update({
+        where: { id: userId },
+        data: { reputation: { increment: 1 } },
+    });
+
+    // Sumar reputación al dueño del reporte
     if (report.userId) {
         await prisma.user.update({
             where: { id: report.userId },
@@ -25,20 +31,37 @@ const confirm = async (reportId, userId) => {
         });
     }
 
+    // Verificar si gana badge FISCALIZADOR
+    const userConfirmations = await prisma.confirmation.count({
+        where: { userId },
+    });
+    if (userConfirmations === 5) {
+        const badge = await prisma.badge.findUnique({
+            where: { name: "FISCALIZADOR" },
+        });
+        if (badge) {
+            await prisma.userBadge
+                .create({
+                    data: { userId, badgeId: badge.id },
+                })
+                .catch(() => {}); // ignorar si ya lo tiene
+        }
+    }
+
     const confirmationCount = await prisma.confirmation.count({
-        where: { reportId }
+        where: { reportId },
     });
 
     // Auto-aprobación estilo Waze
     if (report.status === "PENDING" && confirmationCount >= 10) {
         await prisma.report.update({
             where: { id: reportId },
-            data: { status: "APPROVED" }
+            data: { status: "APPROVED" },
         });
-        
+
         await prisma.media.updateMany({
             where: { reportId, status: "PENDING" },
-            data: { status: "APPROVED" }
+            data: { status: "APPROVED" },
         });
 
         if (report.userId) {
@@ -48,7 +71,7 @@ const confirm = async (reportId, userId) => {
                     type: "REPORT_APPROVED",
                     message: `¡Tu reporte "${report.title}" alcanzó las 10 confirmaciones y fue auto-aprobado por la comunidad!`,
                     data: { reportId, status: "APPROVED" },
-                }
+                },
             });
             const { emitNotification } = require("../utils/socket");
             emitNotification(notif);
@@ -68,7 +91,13 @@ const unconfirm = async (reportId, userId) => {
         where: { reportId_userId: { reportId, userId } },
     });
 
-    // Restar reputaciÃ³n
+    // Restar reputación al que des-confirma
+    await prisma.user.update({
+        where: { id: userId },
+        data: { reputation: { decrement: 1 } },
+    });
+
+    // Restar reputación al dueño del reporte
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (report?.userId) {
         await prisma.user.update({

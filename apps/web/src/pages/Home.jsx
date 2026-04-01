@@ -97,7 +97,7 @@ export default function Home() {
                 Object.entries(filters).filter(([, v]) => v),
             );
             params.status = "APPROVED,IN_PROGRESS";
-            
+
             if (mapBounds) {
                 params.minLat = mapBounds._southWest.lat;
                 params.maxLat = mapBounds._northEast.lat;

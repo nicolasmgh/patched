@@ -135,15 +135,15 @@ const getTopUsers = async () => {
             avatarUrl: true,
             reputation: true,
             _count: {
-                select: { reports: true }
-            }
-        }
+                select: { reports: true },
+            },
+        },
     });
-    
+
     // Ocultar apellidos si el usuario lo requiere
-    return users.map(u => ({
+    return users.map((u) => ({
         ...u,
-        lastName: u.hideLastName ? "" : u.lastName
+        lastName: u.hideLastName ? "" : u.lastName,
     }));
 };
 

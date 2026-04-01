@@ -73,6 +73,7 @@ export default function Stats() {
         { key: "abandonment", label: "🚨 Abandono" },
         { key: "resolution", label: "⏱️ Resolución" },
         { key: "heatmap", label: "🗺️ Mapa de calor" },
+        { key: "leaderboard", label: "🏆 Leaderboard" },
     ];
 
     return (
@@ -429,6 +430,66 @@ export default function Stats() {
                                         </CircleMarker>
                                     ))}
                                 </MapContainer>
+                            </div>
+                        )}
+                        {/* Leaderboard */}
+                        {tab === "leaderboard" && (
+                            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                    🏆 Ranking de Vecinos
+                                </h3>
+                                {leaderboard.length === 0 ? (
+                                    <p className="text-sm text-gray-400">
+                                        No hay usuarios activos todavía.
+                                    </p>
+                                ) : (
+                                    <div className="flex flex-col gap-3">
+                                        {leaderboard.map((user, i) => (
+                                            <div
+                                                key={user.id}
+                                                className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100"
+                                            >
+                                                <span
+                                                    className={`text-xl font-bold w-6 text-center ${i === 0 ? "text-amber-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-amber-700" : "text-gray-300"}`}
+                                                >
+                                                    {i + 1}
+                                                </span>
+                                                {user.avatarUrl ? (
+                                                    <img
+                                                        src={`http://localhost:3000${user.avatarUrl}`}
+                                                        alt="Avatar"
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
+                                                        {user.firstName?.[0]}
+                                                        {user.lastName?.[0]}
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-bold text-gray-900">
+                                                        {user.firstName}{" "}
+                                                        {user.lastName}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {user.reportsCount ||
+                                                            user._count
+                                                                ?.reports}{" "}
+                                                        reportes creados
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-bold text-emerald-600 flex items-center gap-1 justify-end">
+                                                        ⭐ {user.reputation}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        Puntos de reputación
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>

@@ -197,12 +197,20 @@ export default function Map({
                                     </p>
                                     <p className="text-xs mt-1 text-gray-500">
                                         {CATEGORY_LABELS[report.category]}
-                                        {user && ["ADMIN", "COLLABORATOR"].includes(user.role) && (
-                                            <>
-                                                {" "}·{" "}
-                                                {STATUS_LABELS[report.status]}
-                                            </>
-                                        )}
+                                        {user &&
+                                            ["ADMIN", "COLLABORATOR"].includes(
+                                                user.role,
+                                            ) && (
+                                                <>
+                                                    {" "}
+                                                    ·{" "}
+                                                    {
+                                                        STATUS_LABELS[
+                                                            report.status
+                                                        ]
+                                                    }
+                                                </>
+                                            )}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
                                         <span>

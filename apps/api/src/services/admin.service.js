@@ -106,6 +106,31 @@ const changeStatus = async (
                 where: { id: report.userId },
                 data: { reputation: { increment: 10 } },
             });
+            const photosCount = await prisma.report.count({
+                where: { userId: report.userId, status: "APPROVED" },
+            });
+            const grantBadge = async (badgeName) => {
+                const b = await prisma.badge.findUnique({
+                    where: { name: badgeName },
+                });
+                if (b) {
+                    await prisma.userBadge
+                        .upsert({
+                            where: {
+                                userId_badgeId: {
+                                    userId: report.userId,
+                                    badgeId: b.id,
+                                },
+                            },
+                            update: {},
+                            create: { userId: report.userId, badgeId: b.id },
+                        })
+                        .catch(() => {});
+                }
+            };
+            if (photosCount === 0) await grantBadge("PRIMER_REPORTE");
+            if (photosCount === 9) await grantBadge("REPORTERO_ACTIVO");
+            if (photosCount === 49) await grantBadge("HEROE_LOCAL");
         }
         if (status === "RESOLVED") {
             await prisma.user.update({
@@ -586,6 +611,39 @@ const updateMediaStatus = async (mediaId, status, warnUser = false) => {
                     where: { id: uploaderId },
                     data: { reputation: { increment } },
                 });
+            }
+
+            // Gana badges por subir fotos
+            if (media.type === "PHOTO") {
+                const photosCount = await prisma.media.count({
+                    where: {
+                        userId: uploaderId,
+                        status: "APPROVED",
+                        type: "PHOTO",
+                    },
+                });
+                const grantBadge = async (badgeName) => {
+                    const b = await prisma.badge.findUnique({
+                        where: { name: badgeName },
+                    });
+                    if (b) {
+                        await prisma.userBadge
+                            .upsert({
+                                where: {
+                                    userId_badgeId: {
+                                        userId: uploaderId,
+                                        badgeId: b.id,
+                                    },
+                                },
+                                update: {},
+                                create: { userId: uploaderId, badgeId: b.id },
+                            })
+                            .catch(() => {});
+                    }
+                };
+                if (photosCount === 0)
+                    await grantBadge("FOTOGRAFO_PRINCIPIANTE"); // Because the current one is being approved right now, it might be 0 before the update, or we can just check if photosCount >= 0
+                if (photosCount === 9) await grantBadge("FOTOGRAFO_MAESTRO"); // it becomes 10 with this one
             }
 
             const notif = await prisma.notification.create({

@@ -67,7 +67,18 @@ const create = async (data, userId) => {
 };
 
 const getAll = async (filters = {}, user = null) => {
-    const { category, status, city, province, from, to, minLat, maxLat, minLng, maxLng } = filters;
+    const {
+        category,
+        status,
+        city,
+        province,
+        from,
+        to,
+        minLat,
+        maxLat,
+        minLng,
+        maxLng,
+    } = filters;
     const isMod = user && ["COLLABORATOR", "ADMIN"].includes(user.role);
 
     const where = {};
@@ -124,11 +135,11 @@ const getAll = async (filters = {}, user = null) => {
         if (from) where.createdAt.gte = new Date(from);
         if (to) where.createdAt.lte = new Date(to);
     }
-    
+
     if (minLat && maxLat) {
         where.latitude = { gte: parseFloat(minLat), lte: parseFloat(maxLat) };
     }
-    
+
     if (minLng && maxLng) {
         where.longitude = { gte: parseFloat(minLng), lte: parseFloat(maxLng) };
     }
